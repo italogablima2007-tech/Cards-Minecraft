@@ -1,0 +1,1344 @@
+/* =========================================================
+   REINOS & BATALHAS
+   STYLE.CSS
+========================================================= */
+
+
+/* =========================
+   CONFIGURAÇÃO GERAL
+========================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --cor-principal: #d4af5a;
+    --cor-secundaria: #80672f;
+    --fundo-card: rgba(15, 20, 27, 0.94);
+    --borda: rgba(212, 175, 90, 0.35);
+}
+
+body {
+    min-height: 100vh;
+
+    font-family: Georgia, "Times New Roman", serif;
+
+    color: #e8e8e8;
+
+    background:
+        linear-gradient(
+            rgba(5, 8, 12, 0.88),
+            rgba(5, 8, 12, 0.96)
+        ),
+        url("https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80");
+
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+
+/* =========================
+   BOTÕES GERAIS
+========================= */
+
+button {
+    font-family: Georgia, "Times New Roman", serif;
+    cursor: pointer;
+
+    transition:
+        transform 0.2s,
+        border-color 0.2s,
+        background 0.2s,
+        box-shadow 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+.login-container {
+    width: 90%;
+    max-width: 650px;
+
+    padding: 45px;
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    text-align: center;
+
+    background: rgba(10, 14, 20, 0.95);
+
+    border: 2px solid #9b7b3c;
+    border-radius: 12px;
+
+    box-shadow:
+        0 0 40px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(155, 123, 60, 0.2);
+}
+
+.login-container h1 {
+    color: #d4af5a;
+
+    font-size: 34px;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 10px;
+
+    text-shadow:
+        0 2px 5px #000,
+        0 0 10px rgba(212, 175, 90, 0.3);
+}
+
+.login-container > p {
+    color: #aaa;
+
+    margin-bottom: 35px;
+
+    font-size: 17px;
+}
+
+
+/* =========================
+   BOTÕES DOS REINOS LOGIN
+========================= */
+
+.reinos {
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+.reinos button,
+.admin button,
+.login-admin button {
+    width: 100%;
+
+    padding: 16px;
+
+    border: 1px solid #80672f;
+    border-radius: 6px;
+
+    background: #161c24;
+
+    color: #e7d7a8;
+
+    font-size: 17px;
+    font-weight: bold;
+
+    letter-spacing: 1px;
+}
+
+.reinos button:hover,
+.login-admin button:hover {
+    background: #252f3d;
+
+    border-color: #d4af5a;
+
+    color: white;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+
+/* =========================
+   ADMIN LOGIN
+========================= */
+
+.admin {
+    margin-top: 30px;
+
+    padding-top: 25px;
+
+    border-top: 1px solid #393939;
+}
+
+.admin button {
+    background: #21191a;
+
+    border-color: #684345;
+
+    color: #c7a0a0;
+}
+
+.admin button:hover {
+    background: #392225;
+
+    border-color: #a96569;
+
+    color: white;
+}
+
+
+/* =========================
+   CAIXA SENHA ADMIN
+========================= */
+
+.login-admin {
+    display: none;
+
+    margin-top: 25px;
+
+    padding: 25px;
+
+    background: rgba(0, 0, 0, 0.35);
+
+    border: 1px solid #4b4b4b;
+
+    border-radius: 8px;
+}
+
+.login-admin h2 {
+    margin-bottom: 20px;
+
+    color: #d4af5a;
+
+    font-size: 20px;
+}
+
+.login-admin input {
+    width: 100%;
+
+    padding: 14px;
+
+    margin-bottom: 12px;
+
+    background: #0c1015;
+
+    border: 1px solid #555;
+
+    border-radius: 5px;
+
+    color: white;
+
+    font-size: 16px;
+
+    outline: none;
+}
+
+.login-admin input:focus {
+    border-color: #d4af5a;
+}
+
+#erro-senha {
+    color: #e06464;
+
+    margin-top: 15px;
+
+    min-height: 20px;
+}
+
+
+/* =========================================================
+   PAINEL
+========================================================= */
+
+.painel-container {
+    width: 94%;
+
+    max-width: 1200px;
+
+    margin: 40px auto;
+
+    background: rgba(8, 12, 17, 0.93);
+
+    border: 1px solid var(--borda);
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 15px 60px rgba(0, 0, 0, 0.8);
+}
+
+
+/* =========================
+   TOPO DO PAINEL
+========================= */
+
+.topo-painel {
+    min-height: 180px;
+
+    padding: 40px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 30px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.03),
+            rgba(0, 0, 0, 0.4)
+        );
+
+    border-bottom: 1px solid var(--borda);
+}
+
+.pequeno-titulo {
+    color: var(--cor-principal);
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    letter-spacing: 4px;
+
+    margin-bottom: 15px;
+}
+
+.topo-painel h1 {
+    color: white;
+
+    font-size: 35px;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 10px;
+}
+
+#especializacao-reino {
+    color: #aaa;
+
+    font-size: 16px;
+}
+
+
+/* =========================
+   SAIR
+========================= */
+
+.botao-sair {
+    width: auto;
+
+    min-width: 100px;
+
+    padding: 11px 18px;
+
+    background: rgba(70, 20, 20, 0.35);
+
+    border: 1px solid #743d3d;
+
+    border-radius: 6px;
+
+    color: #e7b2b2;
+
+    font-size: 14px;
+}
+
+.botao-sair:hover {
+    background: #642c2c;
+
+    border-color: #b15a5a;
+
+    color: white;
+}
+
+
+/* =========================================================
+   INFORMAÇÕES PRINCIPAIS
+========================================================= */
+
+.informacoes-reino {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 18px;
+
+    padding: 30px 40px;
+}
+
+
+/* =========================
+   CARDS
+========================= */
+
+.card {
+    min-height: 150px;
+
+    padding: 25px;
+
+    background: var(--fundo-card);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    border-radius: 8px;
+
+    text-align: center;
+
+    transition:
+        transform 0.2s,
+        border-color 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+
+    border-color: var(--borda);
+}
+
+.icone-card {
+    display: block;
+
+    font-size: 30px;
+
+    margin-bottom: 12px;
+}
+
+.card h2 {
+    color: #888;
+
+    font-size: 12px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 10px;
+}
+
+.card p {
+    color: white;
+
+    font-size: 19px;
+}
+
+.card strong {
+    color: var(--cor-principal);
+
+    font-size: 25px;
+}
+
+
+/* =========================================================
+   SEÇÕES
+========================================================= */
+
+.secao-painel {
+    margin: 0 40px 35px;
+
+    padding: 30px;
+
+    background: rgba(12, 17, 23, 0.86);
+
+    border: 1px solid rgba(255, 255, 255, 0.07);
+
+    border-radius: 9px;
+}
+
+.titulo-secao {
+    padding-bottom: 18px;
+
+    margin-bottom: 22px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.titulo-secao h2 {
+    color: var(--cor-principal);
+
+    font-size: 18px;
+
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   ESPECIALIZAÇÃO
+========================================================= */
+
+.especializacao-box {
+    padding: 22px;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.03),
+            transparent
+        );
+
+    border-left: 3px solid var(--cor-principal);
+
+    border-radius: 4px;
+}
+
+.especializacao-box h3 {
+    color: white;
+
+    font-size: 21px;
+
+    margin-bottom: 10px;
+}
+
+.especializacao-box p {
+    color: #aaa;
+
+    line-height: 1.7;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   MENU DO REINO
+========================================================= */
+
+.menu-reino {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 15px;
+}
+
+.menu-reino button {
+    min-height: 110px;
+
+    padding: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+    text-align: left;
+
+    background: #111820;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    border-radius: 7px;
+
+    color: white;
+}
+
+.menu-reino button:hover {
+    background: #18222d;
+
+    border-color: var(--cor-principal);
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.menu-reino button > span {
+    font-size: 31px;
+}
+
+.menu-reino button div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+.menu-reino strong {
+    font-size: 15px;
+
+    color: white;
+}
+
+.menu-reino small {
+    color: #777;
+
+    font-family: Arial, sans-serif;
+
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   ACONTECIMENTOS
+========================================================= */
+
+.acontecimentos {
+    min-height: 70px;
+}
+
+.sem-registros {
+    color: #666;
+
+    text-align: center;
+
+    padding: 20px;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+.painel-admin {
+    padding-bottom: 10px;
+}
+
+.descricao-admin {
+    color: #999;
+
+    margin-bottom: 25px;
+
+    font-family: Arial, sans-serif;
+}
+
+.lista-reinos-admin {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 20px;
+}
+
+.reino-admin {
+    min-height: 180px;
+
+    padding: 25px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 15px;
+
+    background: #10161e;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    border-radius: 8px;
+
+    color: white;
+}
+
+.reino-admin:hover {
+    border-color: var(--cor-principal);
+
+    background: #18212b;
+}
+
+.icone-reino-admin {
+    font-size: 45px;
+}
+
+.reino-admin div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+.reino-admin strong {
+    font-size: 20px;
+
+    letter-spacing: 2px;
+}
+
+.reino-admin small {
+    color: #888;
+
+    font-family: Arial, sans-serif;
+}
+
+
+/* =========================================================
+   TEMAS DOS REINOS
+========================================================= */
+
+
+/* =========================
+   DRAKMOR
+========================= */
+
+.tema-drakmor {
+    --cor-principal: #8ed7ff;
+    --cor-secundaria: #386c8c;
+    --borda: rgba(142, 215, 255, 0.35);
+}
+
+.tema-drakmor .topo-painel {
+    background:
+        linear-gradient(
+            120deg,
+            rgba(38, 93, 126, 0.35),
+            rgba(6, 15, 23, 0.85)
+        );
+}
+
+
+/* =========================
+   SOLARIS
+========================= */
+
+.tema-solaris {
+    --cor-principal: #f2b84b;
+    --cor-secundaria: #9b552e;
+    --borda: rgba(242, 184, 75, 0.35);
+}
+
+.tema-solaris .topo-painel {
+    background:
+        linear-gradient(
+            120deg,
+            rgba(137, 63, 25, 0.42),
+            rgba(20, 12, 8, 0.88)
+        );
+}
+
+
+/* =========================
+   AETHERYON
+========================= */
+
+.tema-aetheryon {
+    --cor-principal: #bc9cff;
+    --cor-secundaria: #665092;
+    --borda: rgba(188, 156, 255, 0.35);
+}
+
+.tema-aetheryon .topo-painel {
+    background:
+        linear-gradient(
+            120deg,
+            rgba(83, 60, 133, 0.38),
+            rgba(11, 12, 25, 0.88)
+        );
+}
+
+
+/* =========================
+   ADMIN
+========================= */
+
+.tema-admin {
+    --cor-principal: #d4af5a;
+    --cor-secundaria: #80672f;
+    --borda: rgba(212, 175, 90, 0.35);
+}
+
+.tema-admin .topo-painel {
+    background:
+        linear-gradient(
+            120deg,
+            rgba(112, 87, 35, 0.3),
+            rgba(12, 12, 12, 0.9)
+        );
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .informacoes-reino {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .menu-reino {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .lista-reinos-admin {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .login-container {
+        padding: 30px 20px;
+    }
+
+    .login-container h1 {
+        font-size: 25px;
+    }
+
+
+    .painel-container {
+        width: 96%;
+
+        margin: 15px auto;
+    }
+
+
+    .topo-painel {
+        padding: 25px;
+
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+
+    .topo-painel h1 {
+        font-size: 25px;
+    }
+
+
+    .botao-sair {
+        width: 100%;
+    }
+
+
+    .informacoes-reino {
+        padding: 20px;
+
+        grid-template-columns: 1fr;
+    }
+
+
+    .secao-painel {
+        margin:
+            0 20px 25px;
+
+        padding: 20px;
+    }
+
+
+    .menu-reino {
+        grid-template-columns: 1fr;
+    }
+
+}
+/* =========================================================
+   PÁGINA DO CASTELO
+========================================================= */
+
+/* BARRA DE PROGRESSO */
+
+.barra-progresso {
+    width: 100%;
+    height: 18px;
+
+    background: #080c10;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    margin-top: 10px;
+}
+
+.barra-progresso-preenchimento {
+    width: 10%;
+    height: 100%;
+
+    background: var(--cor-principal);
+
+    border-radius: 20px;
+
+    transition: width 0.5s ease;
+
+    box-shadow:
+        0 0 15px var(--cor-principal);
+}
+
+.texto-progresso {
+    margin-top: 12px;
+
+    text-align: center;
+
+    color: #aaa;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   REQUISITOS
+========================================================= */
+
+.requisitos-castelo {
+    margin-top: 25px;
+}
+
+.requisitos-castelo h3 {
+    color: #ddd;
+
+    font-size: 16px;
+
+    margin-bottom: 15px;
+}
+
+.requisito {
+    padding: 15px 18px;
+
+    margin-bottom: 10px;
+
+    background: rgba(255, 255, 255, 0.03);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+
+    color: #aaa;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 14px;
+}
+
+.requisito-completo {
+    color: #8bd69b;
+
+    border-color: rgba(91, 180, 110, 0.35);
+
+    background: rgba(50, 120, 65, 0.1);
+}
+
+
+/* =========================================================
+   LISTA DE NÍVEIS
+========================================================= */
+
+.lista-niveis {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 12px;
+}
+
+.nivel-castelo-item {
+    min-height: 90px;
+
+    padding: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    background: #0d131a;
+
+    border: 1px solid rgba(255, 255, 255, 0.07);
+
+    border-radius: 7px;
+
+    opacity: 0.55;
+
+    transition:
+        transform 0.2s,
+        border-color 0.2s,
+        opacity 0.2s;
+}
+
+.nivel-castelo-item:hover {
+    transform: translateY(-2px);
+
+    opacity: 0.85;
+}
+
+.numero-nivel {
+    width: 45px;
+    height: 45px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    background: rgba(0, 0, 0, 0.3);
+
+    border-radius: 50%;
+
+    font-size: 21px;
+}
+
+.nivel-castelo-item strong {
+    color: #ddd;
+
+    font-size: 15px;
+}
+
+.nivel-castelo-item p {
+    color: #777;
+
+    margin-top: 7px;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+}
+
+
+/* NÍVEL JÁ CONCLUÍDO */
+
+.nivel-concluido {
+    opacity: 0.8;
+
+    border-color: rgba(90, 180, 110, 0.25);
+
+    background: rgba(30, 80, 45, 0.12);
+}
+
+
+/* NÍVEL ATUAL */
+
+.nivel-castelo-item.nivel-atual {
+    opacity: 1;
+
+    border: 1px solid var(--cor-principal);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.06),
+            rgba(255, 255, 255, 0.01)
+        );
+
+    box-shadow:
+        0 0 20px rgba(0, 0, 0, 0.35);
+}
+
+.nivel-castelo-item.nivel-atual strong {
+    color: var(--cor-principal);
+}
+
+
+/* =========================================================
+   BOTÃO DE EVOLUÇÃO
+========================================================= */
+
+.botao-evoluir {
+    width: 100%;
+
+    margin-top: 25px;
+
+    padding: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--cor-secundaria),
+            rgba(20, 20, 20, 0.9)
+        );
+
+    border: 1px solid var(--cor-principal);
+
+    border-radius: 7px;
+
+    color: white;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    letter-spacing: 1px;
+}
+
+.botao-evoluir:hover:not(:disabled) {
+    box-shadow:
+        0 0 20px var(--borda);
+
+    transform: translateY(-2px);
+}
+
+.botao-evoluir:disabled {
+    opacity: 0.4;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   CASTELO - CELULAR
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .lista-niveis {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* =========================================================
+   ADMINISTRAÇÃO DE CARTAS
+========================================================= */
+
+.formulario-carta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.formulario-carta label {
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #bbb;
+}
+
+.formulario-carta input,
+.formulario-carta select,
+.formulario-carta textarea {
+    width: 100%;
+    padding: 13px;
+
+    background: #090d12;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+
+    color: white;
+
+    font-size: 14px;
+}
+
+.formulario-carta input:focus,
+.formulario-carta select:focus,
+.formulario-carta textarea:focus {
+    outline: none;
+
+    border-color: var(--cor-principal);
+}
+
+.formulario-carta textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.subtitulo-formulario {
+    margin-top: 30px;
+    margin-bottom: 5px;
+
+    color: var(--cor-principal);
+}
+
+.atributos-formulario {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 12px;
+}
+
+.atributos-formulario > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.habilidade-formulario {
+    margin-top: 15px;
+
+    padding: 20px;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+}
+
+.habilidade-formulario h4 {
+    margin-bottom: 15px;
+
+    color: #ddd;
+}
+
+.passiva-formulario {
+    border-color:
+        rgba(212, 175, 90, 0.3);
+}
+
+
+/* LISTA DE CARTAS */
+
+.lista-cartas-admin {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(220px, 1fr));
+
+    gap: 20px;
+
+    margin-top: 20px;
+}
+
+.carta-admin {
+    overflow: hidden;
+
+    background: #090e14;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    border-radius: 10px;
+}
+
+.carta-admin img {
+    width: 100%;
+    height: 270px;
+
+    object-fit: cover;
+
+    display: block;
+}
+
+.sem-imagem-carta {
+    height: 270px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #06090d;
+
+    font-size: 60px;
+}
+
+.conteudo-carta-admin {
+    padding: 17px;
+}
+
+.conteudo-carta-admin h3 {
+    margin-top: 8px;
+    margin-bottom: 10px;
+
+    color: white;
+}
+
+.conteudo-carta-admin p {
+    margin: 5px 0;
+
+    color: #999;
+
+    font-size: 13px;
+}
+
+.raridade-carta {
+    display: inline-block;
+
+    padding: 4px 8px;
+
+    border-radius: 4px;
+
+    background: rgba(255, 255, 255, 0.08);
+
+    font-size: 11px;
+    font-weight: bold;
+
+    text-transform: uppercase;
+}
+
+.raridade-comum {
+    color: #bbb;
+}
+
+.raridade-rara {
+    color: #66aaff;
+}
+
+.raridade-epica {
+    color: #bd70ff;
+}
+
+.raridade-lendaria {
+    color: #ffb84d;
+}
+
+.raridade-mitica {
+    color: #ff5c5c;
+}
+
+.status-carta-admin {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 6px;
+
+    margin-top: 15px;
+}
+
+.status-carta-admin span {
+    padding: 7px;
+
+    background: rgba(255, 255, 255, 0.04);
+
+    border-radius: 4px;
+
+    font-size: 12px;
+}
+
+.botao-excluir-carta {
+    width: 100%;
+
+    margin-top: 15px;
+
+    padding: 10px;
+
+    background: rgba(150, 30, 30, 0.15);
+
+    border: 1px solid rgba(220, 70, 70, 0.35);
+
+    border-radius: 5px;
+
+    color: #ff7777;
+
+    cursor: pointer;
+}
+
+.botao-excluir-carta:hover {
+    background: rgba(180, 40, 40, 0.25);
+}
+
+
+/* CELULAR */
+
+@media (max-width: 700px) {
+
+    .atributos-formulario {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+}

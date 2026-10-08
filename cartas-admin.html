@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Administração de Cartas | Reinos & Batalhas</title>
+
+    <link rel="stylesheet" href="style.css">
+
+<style>
+.preview-carta-wrap{margin:18px 0 8px;display:flex;flex-direction:column;align-items:center;gap:10px}.preview-carta{width:300px;height:430px;position:relative;overflow:hidden;border:3px solid var(--cor-principal);border-radius:18px;background:#080d13;box-shadow:0 12px 35px #000}.preview-fundo{position:absolute;inset:0;background-size:cover;background-position:center}.preview-personagem{position:absolute;z-index:2;max-width:92%;max-height:78%;width:auto;height:auto;left:50%;bottom:14%;top:auto;transform:translateX(-50%);object-fit:contain;object-position:center bottom;image-rendering:auto;filter:drop-shadow(0 8px 8px rgba(0,0,0,.8))}.preview-sombra{position:absolute;z-index:3;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.38) 0%,transparent 25%,transparent 52%,rgba(0,0,0,.94) 84%)}.preview-topo{position:absolute;z-index:4;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;font-size:11px;font-weight:bold;letter-spacing:1px;text-shadow:0 2px 5px #000}.preview-info{position:absolute;z-index:4;left:16px;right:16px;bottom:15px}.preview-info h3{font-size:22px;color:#fff;margin:0 0 3px;text-shadow:0 2px 5px #000}.preview-info p{font-size:12px;color:#ccc;margin:0 0 10px}.preview-status{display:grid;grid-template-columns:1fr 1fr;gap:5px}.preview-status span{padding:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12);border-radius:5px;font-size:12px}.arte-carta-admin{height:270px;position:relative;background-size:cover;background-position:center;overflow:hidden}.arte-carta-admin:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.65))}.arte-carta-admin img{position:absolute;z-index:1;max-width:94%;max-height:94%;width:auto;height:auto;left:50%;bottom:3%;top:auto;transform:translateX(-50%);object-fit:contain;image-rendering:auto;filter:drop-shadow(0 7px 6px rgba(0,0,0,.75))}.sem-personagem{height:100%;display:flex;align-items:center;justify-content:center;font-size:60px}@media(max-width:420px){.preview-carta{width:260px;height:372px}}
+</style>
+</head>
+
+<body class="tema-admin">
+
+<main class="painel-container">
+
+    <!-- TOPO -->
+
+    <header class="topo-painel">
+
+        <div>
+
+            <p class="pequeno-titulo">
+                🎴 REINOS & BATALHAS
+            </p>
+
+            <h1>
+                Administração de Cartas
+            </h1>
+
+            <p>
+                Criação e gerenciamento das cartas do mundo
+            </p>
+
+        </div>
+
+        <button
+            class="botao-sair"
+            onclick="voltar()"
+        >
+            ← Voltar
+        </button>
+
+    </header>
+
+
+    <!-- CRIAR CARTA -->
+
+    <section class="secao-painel">
+
+        <div class="titulo-secao">
+
+            <h2>
+                ➕ Criar nova carta
+            </h2>
+
+        </div>
+
+
+        <div class="formulario-carta">
+
+
+            <!-- NOME -->
+
+            <label>
+                Nome da Carta
+            </label>
+
+            <input
+                type="text"
+                id="nome-carta"
+                placeholder="Ex: Wyvern Gélido"
+             oninput="atualizarPreview()">
+
+
+            <!-- IMAGENS DA CARTA -->
+
+            <label>
+                🐉 URL da imagem da criatura/personagem
+            </label>
+
+            <input type="text" id="imagem-carta" placeholder="PNG da criatura/personagem" oninput="atualizarPreview()">
+
+            <label>
+                🌄 URL da imagem de fundo da carta
+            </label>
+
+            <input type="text" id="fundo-carta" placeholder="Ex: cenário de gelo" oninput="atualizarPreview()">
+
+            <div class="preview-carta-wrap">
+                <p><strong>👁️ Pré-visualização</strong></p>
+                <div class="preview-carta" id="preview-carta">
+                    <div class="preview-fundo" id="preview-fundo"></div>
+                    <img class="preview-personagem" id="preview-personagem" alt="">
+                    <div class="preview-sombra"></div>
+                    <div class="preview-topo">
+                        <span id="preview-raridade">COMUM</span>
+                        <span id="preview-reino">DRAKMOR</span>
+                    </div>
+                    <div class="preview-info">
+                        <h3 id="preview-nome">NOME DA CARTA</h3>
+                        <p id="preview-classe">Sem classe</p>
+                        <div class="preview-status">
+                            <span id="preview-vida">❤️ 100</span>
+                            <span id="preview-ataque">⚔️ 50</span>
+                            <span id="preview-defesa">🛡️ 50</span>
+                            <span id="preview-velocidade">⚡ 50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- REINO -->
+
+            <label>
+                Reino
+            </label>
+
+            <select id="reino-carta" onchange="atualizarPreview()">
+
+                <option value="Drakmor">
+                    ❄️ Drakmor
+                </option>
+
+                <option value="Solaris">
+                    ☀️ Solaris
+                </option>
+
+                <option value="Aetheryon">
+                    ☁️ Aetheryon
+                </option>
+
+                <option value="Neutro">
+                    ⚔️ Neutro
+                </option>
+
+            </select>
+
+
+            <!-- RARIDADE -->
+
+            <label>
+                Raridade
+            </label>
+
+            <select
+                id="raridade-carta"
+                onchange="atualizarHabilidades(); atualizarPreview()"
+            >
+
+                <option value="Comum">
+                    Comum
+                </option>
+
+                <option value="Rara">
+                    Rara
+                </option>
+
+                <option value="Epica">
+                    Épica
+                </option>
+
+                <option value="Lendaria">
+                    Lendária
+                </option>
+
+                <option value="Mitica">
+                    Mítica
+                </option>
+
+            </select>
+
+
+            <!-- CLASSE -->
+
+            <label>
+                Classe
+            </label>
+
+            <input
+                type="text"
+                id="classe-carta"
+                placeholder="Ex: Campeão"
+             oninput="atualizarPreview()">
+
+
+            <!-- ATRIBUTOS -->
+
+            <h3 class="subtitulo-formulario">
+                ⚔️ Atributos
+            </h3>
+
+
+            <div class="atributos-formulario">
+
+                <div>
+
+                    <label>
+                        ❤️ Vida
+                    </label>
+
+                    <input
+                        type="number"
+                        id="vida-carta"
+                        value="100"
+                     oninput="atualizarPreview()">
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        ⚔️ Ataque
+                    </label>
+
+                    <input
+                        type="number"
+                        id="ataque-carta"
+                        value="50"
+                     oninput="atualizarPreview()">
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        🛡️ Defesa
+                    </label>
+
+                    <input
+                        type="number"
+                        id="defesa-carta"
+                        value="50"
+                     oninput="atualizarPreview()">
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        ⚡ Velocidade
+                    </label>
+
+                    <input
+                        type="number"
+                        id="velocidade-carta"
+                        value="50"
+                     oninput="atualizarPreview()">
+
+                </div>
+
+            </div>
+
+
+            <!-- HABILIDADES -->
+
+            <h3 class="subtitulo-formulario">
+                ✨ Habilidades
+            </h3>
+
+
+            <div id="habilidades-carta">
+            </div>
+
+
+            <!-- BOTÃO -->
+
+            <button
+                class="botao-evoluir"
+                onclick="criarCarta()"
+            >
+                🎴 Criar Carta
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- CARTAS CRIADAS -->
+
+    <section class="secao-painel">
+
+        <div class="titulo-secao">
+
+            <h2>
+                📚 Cartas cadastradas
+            </h2>
+
+        </div>
+
+        <p id="quantidade-cartas">
+            0 cartas cadastradas
+        </p>
+
+        <div
+            id="lista-cartas-admin"
+            class="lista-cartas-admin"
+        >
+        </div>
+
+    </section>
+
+</main>
+
+
+<script>
+
+// =====================================================
+// SEGURANÇA
+// =====================================================
+
+const usuario =
+    localStorage.getItem("usuarioLogado");
+
+
+if (usuario !== "Admin") {
+
+    alert(
+        "Apenas o administrador pode acessar esta página."
+    );
+
+    window.location.href =
+        "painel.html";
+
+}
+
+
+// =====================================================
+// CARREGAR CARTAS
+// =====================================================
+
+let cartas =
+    JSON.parse(
+        localStorage.getItem(
+            "cartasReinos"
+        )
+    ) || [];
+
+
+// =====================================================
+// CONFIGURAÇÃO DAS RARIDADES
+// =====================================================
+
+const configuracaoRaridades = {
+
+    Comum: {
+        ataques: 2,
+        passivas: 0
+    },
+
+    Rara: {
+        ataques: 3,
+        passivas: 0
+    },
+
+    Epica: {
+        ataques: 3,
+        passivas: 1
+    },
+
+    Lendaria: {
+        ataques: 4,
+        passivas: 1
+    },
+
+    Mitica: {
+        ataques: 4,
+        passivas: 2
+    }
+
+};
+
+
+// =====================================================
+// ATUALIZAR CAMPOS DAS HABILIDADES
+// =====================================================
+
+function atualizarHabilidades() {
+    const raridade = document.getElementById("raridade-carta").value;
+    const configuracao = configuracaoRaridades[raridade];
+    const area = document.getElementById("habilidades-carta");
+    area.innerHTML = "";
+
+    const tiposDano = ["Cortante", "Fisico", "Frio", "Fogo", "Agua", "Natureza", "Magico", "Sombras", "Luz", "Suporte"];
+    const alvosAtaque = [
+        ["um_inimigo", "🎯 Um inimigo"],
+        ["alvo_adjacentes", "💥 Alvo + inimigos adjacentes"],
+        ["todos_inimigos", "⚔️ Todos os inimigos"],
+        ["proprio", "🛡️ Próprio usuário"],
+        ["um_aliado", "🤝 Um aliado"],
+        ["todos_aliados", "✨ Todos os aliados"]
+    ];
+    const efeitos = [
+        ["nenhum", "Nenhum efeito"],
+        ["reduzir_velocidade", "⬇️ Reduzir Velocidade"],
+        ["aumentar_velocidade", "⬆️ Aumentar Velocidade"],
+        ["reduzir_precisao", "⬇️ Reduzir Precisão"],
+        ["aumentar_precisao", "⬆️ Aumentar Precisão"],
+        ["reduzir_ataque", "⬇️ Reduzir Ataque"],
+        ["aumentar_ataque", "⬆️ Aumentar Ataque"],
+        ["reduzir_defesa", "⬇️ Reduzir Defesa"],
+        ["aumentar_defesa", "⬆️ Aumentar Defesa"],
+        ["reduzir_dano", "⬇️ Reduzir Dano causado"],
+        ["aumentar_dano", "⬆️ Aumentar Dano causado"],
+        ["cura", "💚 Cura"],
+        ["aumentar_vida", "❤️ Aumentar Vida"]
+    ];
+    const alvosEfeito = [
+        ["alvo", "Alvo do ataque"],
+        ["proprio", "Próprio usuário"],
+        ["um_aliado", "Um aliado"],
+        ["todos_aliados", "Todos os aliados"],
+        ["todos_inimigos", "Todos os inimigos"]
+    ];
+
+    const options = arr => arr.map(([v,t]) => `<option value="${v}">${t}</option>`).join("");
+
+    for (let i = 1; i <= configuracao.ataques; i++) {
+        const bloco = document.createElement("div");
+        bloco.className = "habilidade-formulario";
+        bloco.innerHTML = `
+            <h4>⚔️ Ataque ${i}</h4>
+            <label>Nome</label>
+            <input type="text" id="ataque-${i}-nome" placeholder="Nome do ataque">
+
+            <div class="atributos-formulario">
+                <div><label>Dano mínimo</label><input type="number" id="ataque-${i}-min" value="0" min="0"></div>
+                <div><label>Dano máximo</label><input type="number" id="ataque-${i}-max" value="0" min="0"></div>
+                <div><label>Precisão %</label><input type="number" id="ataque-${i}-precisao" value="100" min="0" max="100" step="0.1"></div>
+                <div><label>Tipo de dano</label><select id="ataque-${i}-tipo">${tiposDano.map(t=>`<option value="${t}">${t}</option>`).join("")}</select></div>
+            </div>
+
+            <label>Alvo do ataque</label>
+            <select id="ataque-${i}-alvo">${options(alvosAtaque)}</select>
+
+            <label>Efeito adicional</label>
+            <select id="ataque-${i}-efeito" onchange="alternarEfeitoAtaque(${i})">${options(efeitos)}</select>
+
+            <div id="ataque-${i}-efeito-campos" style="display:none; margin-top:10px;">
+                <div class="atributos-formulario">
+                    <div><label>Alvo do efeito</label><select id="ataque-${i}-efeito-alvo">${options(alvosEfeito)}</select></div>
+                    <div><label>Valor %</label><input type="number" id="ataque-${i}-efeito-valor" value="0" min="0" step="0.1"></div>
+                    <div><label>Duração (turnos)</label><input type="number" id="ataque-${i}-efeito-duracao" value="1" min="0"></div>
+                </div>
+            </div>`;
+        area.appendChild(bloco);
+    }
+
+    const ativacoes = [
+        ["ao_entrar", "Ao entrar em campo"],
+        ["sempre", "Sempre ativa"],
+        ["inicio_turno", "No início do turno"],
+        ["fim_turno", "No fim do turno"],
+        ["ao_atacar", "Ao atacar"],
+        ["ao_receber_dano", "Ao receber dano"],
+        ["vida_baixa", "Quando estiver com vida baixa"]
+    ];
+
+    for (let i = 1; i <= configuracao.passivas; i++) {
+        const bloco = document.createElement("div");
+        bloco.className = "habilidade-formulario passiva-formulario";
+        bloco.innerHTML = `
+            <h4>⭐ Passiva ${i}</h4>
+            <label>Nome</label>
+            <input type="text" id="passiva-${i}-nome" placeholder="Nome da passiva">
+            <label>Descrição</label>
+            <textarea id="passiva-${i}-descricao" placeholder="Descreva a passiva..."></textarea>
+            <label>Ativação</label>
+            <select id="passiva-${i}-ativacao">${options(ativacoes)}</select>
+            <label>Alvo</label>
+            <select id="passiva-${i}-alvo">${options(alvosEfeito)}</select>
+            <label>Efeito</label>
+            <select id="passiva-${i}-efeito">${options(efeitos.filter(e => e[0] !== "nenhum"))}</select>
+            <div class="atributos-formulario">
+                <div><label>Valor %</label><input type="number" id="passiva-${i}-valor" value="0" min="0" step="0.1"></div>
+                <div><label>Duração (turnos)</label><input type="number" id="passiva-${i}-duracao" value="0" min="0"><small>0 = enquanto a passiva estiver ativa</small></div>
+            </div>`;
+        area.appendChild(bloco);
+    }
+}
+
+function alternarEfeitoAtaque(i) {
+    const tipo = document.getElementById(`ataque-${i}-efeito`).value;
+    document.getElementById(`ataque-${i}-efeito-campos`).style.display = tipo === "nenhum" ? "none" : "block";
+}
+
+// =====================================================
+// CRIAR CARTA
+// =====================================================
+
+function criarCarta() {
+
+    const nome =
+        document.getElementById(
+            "nome-carta"
+        ).value.trim();
+
+
+    const imagem =
+        document.getElementById(
+            "imagem-carta"
+        ).value.trim();
+
+    const fundo = document.getElementById("fundo-carta").value.trim();
+
+
+    const reino =
+        document.getElementById(
+            "reino-carta"
+        ).value;
+
+
+    const raridade =
+        document.getElementById(
+            "raridade-carta"
+        ).value;
+
+
+    const classe =
+        document.getElementById(
+            "classe-carta"
+        ).value.trim();
+
+
+    if (!nome) {
+
+        alert(
+            "Digite o nome da carta."
+        );
+
+        return;
+
+    }
+
+
+    const configuracao =
+        configuracaoRaridades[
+            raridade
+        ];
+
+
+    // ATAQUES
+    const ataques = [];
+
+    for (let i = 1; i <= configuracao.ataques; i++) {
+        const tipoEfeito = document.getElementById(`ataque-${i}-efeito`).value;
+        const ataque = {
+            nome: document.getElementById(`ataque-${i}-nome`).value.trim(),
+            danoMin: Number(document.getElementById(`ataque-${i}-min`).value),
+            danoMax: Number(document.getElementById(`ataque-${i}-max`).value),
+            precisao: Number(document.getElementById(`ataque-${i}-precisao`).value),
+            tipo: document.getElementById(`ataque-${i}-tipo`).value,
+            alvo: document.getElementById(`ataque-${i}-alvo`).value,
+            efeito: null
+        };
+
+        if (tipoEfeito !== "nenhum") {
+            ataque.efeito = {
+                tipo: tipoEfeito,
+                alvo: document.getElementById(`ataque-${i}-efeito-alvo`).value,
+                valor: Number(document.getElementById(`ataque-${i}-efeito-valor`).value),
+                duracao: Number(document.getElementById(`ataque-${i}-efeito-duracao`).value)
+            };
+        }
+        ataques.push(ataque);
+    }
+
+    // PASSIVAS
+    const passivas = [];
+
+    for (let i = 1; i <= configuracao.passivas; i++) {
+        passivas.push({
+            nome: document.getElementById(`passiva-${i}-nome`).value.trim(),
+            descricao: document.getElementById(`passiva-${i}-descricao`).value.trim(),
+            ativacao: document.getElementById(`passiva-${i}-ativacao`).value,
+            alvo: document.getElementById(`passiva-${i}-alvo`).value,
+            efeito: {
+                tipo: document.getElementById(`passiva-${i}-efeito`).value,
+                valor: Number(document.getElementById(`passiva-${i}-valor`).value),
+                duracao: Number(document.getElementById(`passiva-${i}-duracao`).value)
+            }
+        });
+    }
+
+    // CARTA
+
+    const novaCarta = {
+
+        id: Date.now(),
+
+        nome: nome,
+
+        imagem: imagem,
+
+        fundo: fundo,
+
+        reino: reino,
+
+        raridade: raridade,
+
+        classe: classe,
+
+        vida:
+            Number(
+                document.getElementById(
+                    "vida-carta"
+                ).value
+            ),
+
+        ataque:
+            Number(
+                document.getElementById(
+                    "ataque-carta"
+                ).value
+            ),
+
+        defesa:
+            Number(
+                document.getElementById(
+                    "defesa-carta"
+                ).value
+            ),
+
+        velocidade:
+            Number(
+                document.getElementById(
+                    "velocidade-carta"
+                ).value
+            ),
+
+        ataques: ataques,
+
+        passivas: passivas
+
+    };
+
+
+    // SALVAR
+
+    cartas.push(
+        novaCarta
+    );
+
+
+    salvarCartas();
+
+
+    alert(
+        "🎴 Carta " +
+        nome +
+        " criada com sucesso!"
+    );
+
+
+    limparFormulario();
+
+    mostrarCartas();
+
+}
+
+
+// =====================================================
+// SALVAR
+// =====================================================
+
+function salvarCartas() {
+
+    localStorage.setItem(
+        "cartasReinos",
+        JSON.stringify(
+            cartas
+        )
+    );
+
+}
+
+
+// =====================================================
+// LIMPAR FORMULÁRIO
+// =====================================================
+
+function limparFormulario() {
+
+    document.getElementById(
+        "nome-carta"
+    ).value = "";
+
+
+    document.getElementById(
+        "imagem-carta"
+    ).value = "";
+
+    document.getElementById("fundo-carta").value = "";
+
+
+    document.getElementById(
+        "classe-carta"
+    ).value = "";
+
+
+    document.getElementById(
+        "vida-carta"
+    ).value = 100;
+
+
+    document.getElementById(
+        "ataque-carta"
+    ).value = 50;
+
+
+    document.getElementById(
+        "defesa-carta"
+    ).value = 50;
+
+
+    document.getElementById(
+        "velocidade-carta"
+    ).value = 50;
+
+
+    atualizarHabilidades();
+    atualizarPreview();
+
+}
+
+
+// =====================================================
+// MOSTRAR CARTAS
+// =====================================================
+
+function mostrarCartas() {
+
+    const lista =
+        document.getElementById(
+            "lista-cartas-admin"
+        );
+
+
+    lista.innerHTML = "";
+
+
+    document.getElementById(
+        "quantidade-cartas"
+    ).textContent =
+        cartas.length +
+        (
+            cartas.length === 1
+            ? " carta cadastrada"
+            : " cartas cadastradas"
+        );
+
+
+    if (cartas.length === 0) {
+
+        lista.innerHTML = `
+
+            <p class="sem-registros">
+
+                Nenhuma carta criada ainda.
+
+            </p>
+
+        `;
+
+        return;
+
+    }
+
+
+    cartas.forEach(
+        function(carta) {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "carta-admin";
+
+
+            let imagemHTML = "";
+
+
+            if (carta.imagem || carta.fundo) {
+                imagemHTML = `
+                    <div class="arte-carta-admin" style="background-image:url('${carta.fundo || ""}')">
+                        ${carta.imagem ? `<img src="${carta.imagem}" alt="${carta.nome}">` : `<div class="sem-personagem">🎴</div>`}
+                    </div>
+                `;
+            } else {
+                imagemHTML = `<div class="sem-imagem-carta">🎴</div>`;
+            }
+
+
+            div.innerHTML = `
+
+                ${imagemHTML}
+
+                <div class="conteudo-carta-admin">
+
+                    <span class="raridade-carta raridade-${carta.raridade.toLowerCase()}">
+
+                        ${carta.raridade}
+
+                    </span>
+
+                    <h3>
+                        ${carta.nome}
+                    </h3>
+
+                    <p>
+                        👑 ${carta.reino}
+                    </p>
+
+                    <p>
+                        ⚔️ ${carta.classe || "Sem classe"}
+                    </p>
+
+                    <div class="status-carta-admin">
+
+                        <span>
+                            ❤️ ${carta.vida}
+                        </span>
+
+                        <span>
+                            ⚔️ ${carta.ataque}
+                        </span>
+
+                        <span>
+                            🛡️ ${carta.defesa}
+                        </span>
+
+                        <span>
+                            ⚡ ${carta.velocidade}
+                        </span>
+
+                    </div>
+
+                    <button
+                        class="botao-excluir-carta"
+                        onclick="excluirCarta(${carta.id})"
+                    >
+                        🗑️ Excluir
+                    </button>
+
+                </div>
+
+            `;
+
+
+            lista.appendChild(
+                div
+            );
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// EXCLUIR CARTA
+// =====================================================
+
+function excluirCarta(id) {
+
+    const carta =
+        cartas.find(
+            function(item) {
+
+                return item.id === id;
+
+            }
+        );
+
+
+    if (!carta) {
+        return;
+    }
+
+
+    const confirmar =
+        confirm(
+            "Deseja excluir a carta " +
+            carta.nome +
+            "?"
+        );
+
+
+    if (!confirmar) {
+        return;
+    }
+
+
+    cartas =
+        cartas.filter(
+            function(item) {
+
+                return item.id !== id;
+
+            }
+        );
+
+
+    salvarCartas();
+
+    mostrarCartas();
+
+}
+
+
+// =====================================================
+// PRÉ-VISUALIZAÇÃO DA CARTA
+// =====================================================
+
+function atualizarPreview() {
+    const valor = id => document.getElementById(id)?.value || "";
+    const fundo = valor("fundo-carta");
+    const imagem = valor("imagem-carta");
+
+    document.getElementById("preview-fundo").style.backgroundImage = fundo ? `url("${fundo}")` : "none";
+    const personagem = document.getElementById("preview-personagem");
+    personagem.src = imagem;
+    personagem.style.display = imagem ? "block" : "none";
+
+    document.getElementById("preview-nome").textContent = valor("nome-carta") || "NOME DA CARTA";
+    document.getElementById("preview-classe").textContent = valor("classe-carta") || "Sem classe";
+    document.getElementById("preview-reino").textContent = (valor("reino-carta") || "Drakmor").toUpperCase();
+    document.getElementById("preview-raridade").textContent = (valor("raridade-carta") || "Comum").toUpperCase();
+    document.getElementById("preview-vida").textContent = `❤️ ${valor("vida-carta") || 0}`;
+    document.getElementById("preview-ataque").textContent = `⚔️ ${valor("ataque-carta") || 0}`;
+    document.getElementById("preview-defesa").textContent = `🛡️ ${valor("defesa-carta") || 0}`;
+    document.getElementById("preview-velocidade").textContent = `⚡ ${valor("velocidade-carta") || 0}`;
+}
+
+// =====================================================
+// VOLTAR
+// =====================================================
+
+function voltar() {
+
+    window.location.href =
+        "painel.html";
+
+}
+
+
+// =====================================================
+// INICIAR
+// =====================================================
+
+atualizarHabilidades();
+atualizarPreview();
+mostrarCartas();
+
+</script>
+
+</body>
+
+</html>

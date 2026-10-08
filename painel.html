@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Painel | Reinos & Batalhas</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body id="corpo-painel">
+
+    <main class="painel-container">
+
+        <!-- =====================================
+             TOPO
+        ====================================== -->
+
+        <header class="topo-painel">
+
+            <div>
+                <p class="pequeno-titulo">
+                    ⚔ REINOS & BATALHAS
+                </p>
+
+                <h1 id="nome-reino">
+                    Carregando...
+                </h1>
+
+                <p id="especializacao-reino"></p>
+            </div>
+
+            <button class="botao-sair" onclick="sair()">
+                🚪 Sair
+            </button>
+
+        </header>
+
+
+        <!-- =====================================
+             PAINEL NORMAL DOS REINOS
+        ====================================== -->
+
+        <div id="painel-reino">
+
+            <!-- INFORMAÇÕES PRINCIPAIS -->
+
+            <section class="informacoes-reino">
+
+                <div class="card">
+
+                    <span class="icone-card">
+                        👑
+                    </span>
+
+                    <h2>Governante</h2>
+
+                    <p id="governante-reino">
+                        ---
+                    </p>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="icone-card">
+                        🏰
+                    </span>
+
+                    <h2>Castelo</h2>
+
+                    <p>
+                        Nível
+                        <strong id="nivel-castelo">
+                            1
+                        </strong>
+                    </p>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="icone-card">
+                        📍
+                    </span>
+
+                    <h2>Capital</h2>
+
+                    <p id="capital-reino">
+                        ---
+                    </p>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="icone-card">
+                        🗺️
+                    </span>
+
+                    <h2>Território</h2>
+
+                    <p id="territorio-reino">
+                        500 blocos
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ESPECIALIZAÇÃO -->
+
+            <section class="secao-painel">
+
+                <div class="titulo-secao">
+
+                    <h2>
+                        ⭐ Especialização
+                    </h2>
+
+                </div>
+
+                <div class="especializacao-box">
+
+                    <h3 id="nome-especializacao">
+                        ---
+                    </h3>
+
+                    <p id="descricao-especializacao">
+                        ---
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ADMINISTRAÇÃO DO REINO -->
+
+            <section class="secao-painel">
+
+                <div class="titulo-secao">
+
+                    <h2>
+                        📜 Administração do Reino
+                    </h2>
+
+                </div>
+
+
+                <div class="menu-reino">
+
+                    <button onclick="abrirFuncao('castelo')">
+
+                        <span>🏰</span>
+
+                        <div>
+                            <strong>Evolução do Castelo</strong>
+                            <small>
+                                Níveis, requisitos e território
+                            </small>
+                        </div>
+
+                    </button>
+
+
+
+                    <button onclick="abrirFuncao('inventario')">
+                        <span>🎴</span>
+                        <div>
+                            <strong>Minhas Cartas</strong>
+                            <small>Inventário de cartas do Reino</small>
+                        </div>
+                    </button>
+
+                    <button onclick="abrirFuncao('tratados')">
+
+                        <span>📜</span>
+
+                        <div>
+                            <strong>Tratados</strong>
+                            <small>
+                                Acordos entre os Reinos
+                            </small>
+                        </div>
+
+                    </button>
+
+
+                    <button onclick="abrirFuncao('comercio')">
+
+                        <span>💰</span>
+
+                        <div>
+                            <strong>Comércio</strong>
+                            <small>
+                                Compras, vendas e trocas
+                            </small>
+                        </div>
+
+                    </button>
+
+
+                    <button onclick="abrirFuncao('conquistas')">
+
+                        <span>🏆</span>
+
+                        <div>
+                            <strong>Conquistas</strong>
+                            <small>
+                                Grandes feitos do Reino
+                            </small>
+                        </div>
+
+                    </button>
+
+
+                    <button onclick="abrirFuncao('relacoes')">
+
+                        <span>⚔️</span>
+
+                        <div>
+                            <strong>Relações</strong>
+                            <small>
+                                Aliados, rivais e guerras
+                            </small>
+                        </div>
+
+                    </button>
+
+
+                    <button onclick="abrirFuncao('historia')">
+
+                        <span>📖</span>
+
+                        <div>
+                            <strong>História</strong>
+                            <small>
+                                Registro histórico do Reino
+                            </small>
+                        </div>
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- ACONTECIMENTOS -->
+
+            <section class="secao-painel">
+
+                <div class="titulo-secao">
+
+                    <h2>
+                        📰 Últimos Acontecimentos
+                    </h2>
+
+                </div>
+
+                <div
+                    id="lista-acontecimentos"
+                    class="acontecimentos"
+                >
+
+                    <p class="sem-registros">
+                        Nenhum acontecimento registrado.
+                    </p>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        <!-- =====================================
+             PAINEL ADMIN
+        ====================================== -->
+
+        <div
+            id="painel-admin"
+            class="painel-admin"
+            style="display: none;"
+        >
+
+            <section class="secao-painel">
+
+                <div class="titulo-secao">
+
+                    <h2>
+                        ⚙️ Administração Geral
+                    </h2>
+
+                </div>
+
+                <p class="descricao-admin">
+                    Escolha um Reino para administrar.
+                </p>
+
+
+                <div class="lista-reinos-admin">
+
+                    <!-- DRAKMOR -->
+
+                    <button
+                        class="reino-admin drakmor-admin"
+                        onclick="administrarReino('Drakmor')"
+                    >
+
+                        <span class="icone-reino-admin">
+                            ❄️
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                DRAKMOR
+                            </strong>
+
+                            <small>
+                                Agricultura & Tecnologia
+                            </small>
+
+                        </div>
+
+                    </button>
+
+
+                    <!-- SOLARIS -->
+
+                    <button
+                        class="reino-admin solaris-admin"
+                        onclick="administrarReino('Solaris')"
+                    >
+
+                        <span class="icone-reino-admin">
+                            ☀️
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                SOLARIS
+                            </strong>
+
+                            <small>
+                                Poder Militar
+                            </small>
+
+                        </div>
+
+                    </button>
+
+
+                    <!-- AETHERYON -->
+
+                    <button
+                        class="reino-admin aetheryon-admin"
+                        onclick="administrarReino('Aetheryon')"
+                    >
+
+                        <span class="icone-reino-admin">
+                            ☁️
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                AETHERYON
+                            </strong>
+
+                            <small>
+                                Comércio
+                            </small>
+
+                        </div>
+
+                    </button>
+
+                </div>
+
+<!-- =====================================
+     ADMINISTRAÇÃO DE CARTAS
+====================================== -->
+
+<div style="margin-top: 30px;">
+
+    <button
+        class="reino-admin"
+        onclick="abrirAdminCartas()"
+        style="width: 100%;"
+    >
+
+        <span class="icone-reino-admin">
+            🎴
+        </span>
+
+        <div>
+
+            <strong>
+                ADMINISTRAÇÃO DE CARTAS
+            </strong>
+
+            <small>
+                Criar, visualizar e gerenciar as cartas
+            </small>
+
+        </div>
+
+    </button>
+
+</div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <!-- =====================================
+         JAVASCRIPT DO PAINEL
+    ====================================== -->
+
+    <script>
+
+        // =====================================
+        // USUÁRIO LOGADO
+        // =====================================
+
+        const usuario =
+            localStorage.getItem("usuarioLogado");
+
+
+        if (!usuario) {
+
+            window.location.href = "index.html";
+
+        }
+
+
+        // =====================================
+        // DADOS DOS REINOS
+        // =====================================
+
+        const dadosReinos = {
+
+            Drakmor: {
+
+                icone: "❄️",
+
+                nome: "DRAKMOR",
+
+                governante: "Rei Ítalo",
+
+                capital: "Drakhen",
+
+                castelo: 1,
+
+                territorio: "500 blocos",
+
+                especializacao:
+                    "Agricultura & Tecnologia",
+
+                descricao:
+                    "Drakmor domina o desenvolvimento agrícola e tecnológico entre os Reinos."
+
+            },
+
+
+            Solaris: {
+
+                icone: "☀️",
+
+                nome: "SOLARIS",
+
+                governante: "A definir",
+
+                capital: "A definir",
+
+                castelo: 1,
+
+                territorio: "500 blocos",
+
+                especializacao:
+                    "Poder Militar",
+
+                descricao:
+                    "Solaris é especializado em poder militar, defesa e preparação para conflitos."
+
+            },
+
+
+            Aetheryon: {
+
+                icone: "☁️",
+
+                nome: "AETHERYON",
+
+                governante: "A definir",
+
+                capital: "A definir",
+
+                castelo: 1,
+
+                territorio: "500 blocos",
+
+                especializacao:
+                    "Comércio",
+
+                descricao:
+                    "Aetheryon domina o comércio, as negociações e as grandes rotas comerciais entre os Reinos."
+
+            }
+
+        };
+
+
+// =====================================
+// CARREGAR REINO
+// =====================================
+
+function carregarReino(nomeReino) {
+
+    const reino = dadosReinos[nomeReino];
+
+    if (!reino) {
+        return;
+    }
+
+
+    // =====================================
+    // NOME DO REINO
+    // =====================================
+
+    document.getElementById(
+        "nome-reino"
+    ).textContent =
+        reino.icone +
+        " REINO DE " +
+        reino.nome;
+
+
+    // =====================================
+    // ESPECIALIZAÇÃO
+    // =====================================
+
+    document.getElementById(
+        "especializacao-reino"
+    ).textContent =
+        reino.especializacao;
+
+
+    // =====================================
+    // GOVERNANTE
+    // =====================================
+
+    document.getElementById(
+        "governante-reino"
+    ).textContent =
+        reino.governante;
+
+
+    // =====================================
+    // CASTELO SALVO
+    // =====================================
+
+    let nivelCastelo =
+        Number(
+            localStorage.getItem(
+                "castelo_" + nomeReino
+            )
+        );
+
+
+    // Se ainda não existe nível salvo,
+    // o Reino começa no nível 1
+
+    if (!nivelCastelo) {
+
+        nivelCastelo = 1;
+
+        localStorage.setItem(
+            "castelo_" + nomeReino,
+            "1"
+        );
+    }
+
+
+    // =====================================
+    // TERRITÓRIO POR NÍVEL
+    // =====================================
+
+    const territoriosCastelo = {
+
+        1: 500,
+        2: 650,
+        3: 800,
+        4: 1000,
+        5: 1250,
+        6: 1500,
+        7: 1800,
+        8: 2100,
+        9: 2500,
+        10: 3000
+
+    };
+
+
+    // =====================================
+    // MOSTRAR NÍVEL DO CASTELO
+    // =====================================
+
+    document.getElementById(
+        "nivel-castelo"
+    ).textContent =
+        nivelCastelo;
+
+
+    // =====================================
+    // CAPITAL
+    // =====================================
+
+    document.getElementById(
+        "capital-reino"
+    ).textContent =
+        reino.capital;
+
+
+    // =====================================
+    // TERRITÓRIO ATUAL
+    // =====================================
+
+    document.getElementById(
+        "territorio-reino"
+    ).textContent =
+        territoriosCastelo[nivelCastelo] +
+        " blocos";
+
+
+    // =====================================
+    // NOME DA ESPECIALIZAÇÃO
+    // =====================================
+
+    document.getElementById(
+        "nome-especializacao"
+    ).textContent =
+        reino.especializacao;
+
+
+    // =====================================
+    // DESCRIÇÃO DA ESPECIALIZAÇÃO
+    // =====================================
+
+    document.getElementById(
+        "descricao-especializacao"
+    ).textContent =
+        reino.descricao;
+
+
+    // =====================================
+    // TEMA VISUAL DO REINO
+    // =====================================
+
+    document.body.classList.remove(
+        "tema-drakmor",
+        "tema-solaris",
+        "tema-aetheryon",
+        "tema-admin"
+    );
+
+
+    document.body.classList.add(
+        "tema-" + nomeReino.toLowerCase()
+    );
+
+}
+
+        // =====================================
+        // LOGIN NORMAL
+        // =====================================
+
+        if (usuario !== "Admin") {
+
+            carregarReino(usuario);
+
+        }
+
+
+        // =====================================
+        // LOGIN ADMIN
+        // =====================================
+
+        else {
+
+            document.body.classList.add(
+                "tema-admin"
+            );
+
+
+            document.getElementById(
+                "painel-reino"
+            ).style.display = "none";
+
+
+            document.getElementById(
+                "painel-admin"
+            ).style.display = "block";
+
+
+            document.getElementById(
+                "nome-reino"
+            ).textContent =
+                "⚙️ PAINEL ADMINISTRATIVO";
+
+
+            document.getElementById(
+                "especializacao-reino"
+            ).textContent =
+                "Administração dos Reinos";
+
+        }
+
+
+        // =====================================
+        // ADMINISTRAR UM REINO
+        // =====================================
+
+        function administrarReino(nomeReino) {
+
+            localStorage.setItem(
+                "reinoAdministrado",
+                nomeReino
+            );
+
+            carregarReino(nomeReino);
+            document.getElementById(
+                "painel-admin"
+            ).style.display = "none";
+
+
+            document.getElementById(
+                "painel-reino"
+            ).style.display = "block";
+
+
+            // Indica que estamos administrando
+
+            document.getElementById(
+                "especializacao-reino"
+            ).textContent =
+                "⚙️ Administrando " +
+                nomeReino +
+                " • " +
+                dadosReinos[nomeReino].especializacao;
+
+        }
+
+
+        // =====================================
+        // BOTÕES DO MENU
+        // =====================================
+
+   function abrirFuncao(funcao) {
+
+    if (funcao === "castelo") {
+
+        // Se for Admin, usamos o Reino que ele escolheu.
+        if (usuario === "Admin") {
+
+            const reino =
+                localStorage.getItem(
+                    "reinoAdministrado"
+                );
+
+            if (!reino) {
+
+                alert(
+                    "Escolha primeiro um Reino para administrar."
+                );
+
+                return;
+
+            }
+
+        }
+
+        window.location.href =
+            "castelo.html";
+
+        return;
+
+    }
+
+
+
+    if (funcao === "inventario") {
+        if (usuario === "Admin") {
+            const reino = localStorage.getItem("reinoAdministrado");
+            if (!reino) {
+                alert("Escolha primeiro um Reino para administrar.");
+                return;
+            }
+        }
+        window.location.href = "inventario.html";
+        return;
+    }
+
+    alert(
+        "A área '" +
+        funcao +
+        "' será criada em seguida."
+    );
+
+}
+
+// =====================================
+// ADMINISTRAÇÃO DE CARTAS
+// =====================================
+
+function abrirAdminCartas() {
+
+    if (usuario !== "Admin") {
+        return;
+    }
+
+    window.location.href =
+        "cartas-admin.html";
+}
+
+        // =====================================
+        // SAIR
+        // =====================================
+
+        function sair() {
+
+            localStorage.removeItem(
+                "usuarioLogado"
+            );
+
+            window.location.href =
+                "index.html";
+
+        }
+
+    </script>
+
+</body>
+
+</html>
