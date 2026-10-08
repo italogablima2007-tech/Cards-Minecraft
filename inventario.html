@@ -34,6 +34,7 @@
 </header>
 <section class="secao-painel">
 <div class="titulo-secao"><h2>📚 Minhas Cartas</h2></div>
+<p style="margin-bottom:18px"><a href="pacotes.html" class="botao-evoluir" style="display:inline-block;text-decoration:none;padding:12px 18px">🎁 Abrir Pacotes</a></p>
 <div class="resumo-inventario">
 <div class="card"><span class="icone-card">🎴</span><h2>Cartas</h2><p id="total">0</p></div>
 <div class="card"><span class="icone-card">✨</span><h2>Diferentes</h2><p id="diferentes">0</p></div>
@@ -57,17 +58,7 @@ const catalogo=JSON.parse(localStorage.getItem("cartasReinos"))||[];
 const chave="inventario_"+reino;
 let inventario=JSON.parse(localStorage.getItem(chave))||[];
 
-// TESTE: enquanto não existem pacotes, coloca a primeira carta do Reino no inventário vazio.
-if(!inventario.length){
- const teste=catalogo.find(c=>c.reino===reino);
- if(teste){
-  inventario=[{idCarta:teste.id,quantidade:1,nivel:1,xp:0}];
-  localStorage.setItem(chave,JSON.stringify(inventario));
-  aviso.style.display="block";
-  aviso.textContent="🧪 Teste: a primeira carta de "+reino+" foi adicionada. Depois ela será obtida pelos pacotes.";
- }
-}
-
+// As cartas são obtidas exclusivamente pelos pacotes.
 const cartaPorId=id=>catalogo.find(c=>String(c.id)===String(id));
 const esc=t=>{const d=document.createElement("div");d.textContent=t??"";return d.innerHTML};
 const criatura=c=>c.imagemCriatura||c.imagemPersonagem||c.imagem||"";
