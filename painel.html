@@ -171,6 +171,11 @@
 
 
 
+                    <button onclick="abrirFuncao('pacotes')">
+                        <span>🎁</span>
+                        <div><strong>Pacotes de Cartas</strong><small>Abra pacotes dos três Reinos</small></div>
+                    </button>
+
                     <button onclick="abrirFuncao('inventario')">
                         <span>🎴</span>
                         <div>
@@ -801,6 +806,15 @@ function carregarReino(nomeReino) {
     }
 
 
+
+    if (funcao === "pacotes") {
+        if (usuario === "Admin" && !localStorage.getItem("reinoAdministrado")) {
+            alert("Escolha primeiro um Reino para administrar.");
+            return;
+        }
+        window.location.href = "pacotes.html";
+        return;
+    }
 
     if (funcao === "inventario") {
         if (usuario === "Admin") {
