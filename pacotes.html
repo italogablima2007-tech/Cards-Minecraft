@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pacotes de Cartas | Reinos & Batalhas</title><link rel="stylesheet" href="style.css">
+<style>
+.pacotes-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+.pacote{border:1px solid #ffffff2b;border-radius:18px;padding:25px 18px;text-align:center;background:linear-gradient(145deg,#15202d,#0b101a);box-shadow:0 10px 25px #0004}
+.pacote h3{font-size:23px;margin:12px 0}.pacote p{opacity:.8;margin:9px 0}.pacote .icone{font-size:60px}.pacote button,.acao{border:0;border-radius:10px;background:#e6bc65;color:#17120a;font-weight:800;padding:12px 18px;cursor:pointer;margin-top:12px}.pacote button:disabled{opacity:.45;cursor:not-allowed}
+.pacote.drakmor{border-color:#70caff}.pacote.solaris{border-color:#ffbc59}.pacote.aetheryon{border-color:#b7a5f7}
+.abertura{margin-top:25px;padding:24px 12px;border-radius:18px;background:#080d16;border:1px solid #ffffff22;text-align:center}.oculto{display:none!important}
+.cartas-revelar{display:flex;justify-content:center;flex-wrap:wrap;gap:16px;margin:22px 0}.carta-virar{position:relative;width:190px;height:280px;perspective:1100px;cursor:pointer;outline-offset:5px}.interior{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .75s}.carta-virar.virada .interior{transform:rotateY(180deg)}.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;border:2px solid #bd9c58;overflow:hidden}.verso{display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#304c71,#10182a 75%);font-size:60px}.frente{transform:rotateY(180deg);background:#121924}.frente.epica{border-color:#b78aff;box-shadow:0 0 20px #ab74ef88}.frente.lendaria{border-color:#ffc74c;box-shadow:0 0 22px #ffc74c88}.frente.mitica{border-color:#ff668f;box-shadow:0 0 22px #ff668f88}.arte{position:relative;height:190px;background:#101827;overflow:hidden}.arte img{position:absolute;width:100%;height:100%;inset:0}.arte .fundo{object-fit:cover}.arte .criatura{object-fit:contain;z-index:1;filter:drop-shadow(0 5px 4px #000)}.arte:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 55%,#121924);z-index:2}.nome{font-size:15px;font-weight:bold;padding:7px 6px 2px}.tipo{font-size:12px;opacity:.85}.resultado{font-size:16px;min-height:22px}.aviso-pacote{padding:13px;margin:16px 0;border:1px solid #ffffff35;border-radius:12px}
+@media(max-width:620px){.carta-virar{width:145px;height:230px}.arte{height:145px}.cartas-revelar{gap:9px}.nome{font-size:13px}}
+</style>
+</head>
+<body id="corpo-painel"><main class="painel-container">
+<header class="topo-painel"><div><p class="pequeno-titulo">🎴 REINOS & BATALHAS</p><h1>🎁 Pacotes de Cartas</h1><p id="subtitulo">Escolha um pacote para abrir</p></div><button class="botao-sair" onclick="location.href='painel.html'">← Voltar</button></header>
+<section class="secao-painel"><div class="titulo-secao"><h2>Escolha seu pacote</h2></div><p>São 3 cartas garantidas de cada Reino. Aberturas ilimitadas nesta versão de teste.</p><div id="pacotes" class="pacotes-grade"></div><p id="aviso" class="aviso-pacote" style="display:none"></p></section>
+<section id="abertura" class="abertura oculto" aria-live="polite"><h2 id="titulo-abertura">Abrindo pacote...</h2><p>Toque em cada carta para revelá-la.</p><div id="cartas-revelar" class="cartas-revelar"></div><p id="resultado" class="resultado"></p><button id="concluir" class="acao oculto" onclick="concluir()">🎒 Ver Inventário</button><button id="outro" class="acao oculto" onclick="outroPacote()">🎁 Abrir Outro Pacote</button></section>
+</main><script type="module">
+import "./firebase-config.js";
+const sessao=await window.RB.exigir();
+
+const usuario=sessao.reino;
+if(!usuario)location.replace('index.html');
+const reinoJogador=usuario==='Admin'?localStorage.getItem('reinoAdministrado'):usuario;
+if(!reinoJogador){alert('Selecione primeiro um Reino no painel.');location.replace('painel.html')}
+document.body.classList.add('tema-'+reinoJogador.toLowerCase());
+document.getElementById('subtitulo').textContent='Inventário de '+reinoJogador+' • Pacotes dos três Reinos';
+const reinos=[{nome:'Drakmor',icone:'❄️',desc:'Agricultura e Tecnologia'},{nome:'Solaris',icone:'☀️',desc:'Poder Militar'},{nome:'Aetheryon',icone:'☁️',desc:'Comércio'}];
+const $=id=>document.getElementById(id);
+const esc=t=>{const d=document.createElement('div');d.textContent=String(t??'');return d.innerHTML};
+const cartasOnline=await window.RB.listarCartas();
+const catalogo=()=>cartasOnline;
+let pacoteAtual=null,reveladas=0;
+function mostrarPacotes(){
+ $('pacotes').innerHTML=reinos.map(r=>{const cartas=catalogo().filter(c=>c.reino===r.nome);const pronto=cartas.length>=3;return `<article class="pacote ${r.nome.toLowerCase()}"><div class="icone">${r.icone}</div><h3>Pacote ${r.nome}</h3><p>${r.desc}</p><p>🎴 3 cartas garantidas</p><p>${cartas.length} cadastrada(s) no catálogo deste navegador</p><button data-reino="${r.nome}" ${!pronto?'disabled':''}>${pronto?'🎁 Abrir Pacote':'🔒 Faltam cartas'}</button></article>`}).join('');
+ $('pacotes').querySelectorAll('button[data-reino]').forEach(b=>b.addEventListener('click',()=>abrirPacote(b.dataset.reino)));
+}
+function aviso(m){$('aviso').style.display='block';$('aviso').textContent=m}
+function abrirPacote(reino){
+ if(pacoteAtual)return;
+ const cartas=catalogo().filter(c=>c.reino===reino);
+ if(cartas.length<3){aviso('Cadastre pelo menos 3 cartas de '+reino+' no catálogo online antes de abrir.');return}
+ // Três cartas distintas, garantidas; quando houver mais de três, usa as três primeiras cadastradas.
+ const selecionadas=cartas.slice(0,3);
+ pacoteAtual={reino,cartas:selecionadas};reveladas=0;
+ $('abertura').classList.remove('oculto');$('titulo-abertura').textContent='🎁 Pacote '+reino;
+ $('resultado').textContent='0 de 3 cartas reveladas';$('concluir').classList.add('oculto');$('outro').classList.add('oculto');
+ $('cartas-revelar').replaceChildren();
+ selecionadas.forEach((c,i)=>{
+  const el=document.createElement('div');el.className='carta-virar';el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label','Revelar carta '+(i+1));
+  const fundo=c.fundo||'';const criatura=c.imagem||'';
+  el.innerHTML=`<div class="interior"><div class="face verso">🎴</div><div class="face frente ${esc((c.raridade||'').toLowerCase())}"><div class="arte">${fundo?`<img class="fundo" alt="" src="${esc(fundo)}">`:''}${criatura?`<img class="criatura" alt="" src="${esc(criatura)}">`:''}</div><div class="nome">${esc(c.nome)}</div><div class="tipo">${esc(c.raridade)} • ${esc(c.classe||'Carta')}</div></div></div>`;
+  const virar=()=>revelar(el,i);
+  el.addEventListener('click',virar);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();virar()}});
+  $('cartas-revelar').appendChild(el);
+ });
+ $('abertura').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function revelar(el,i){
+ if(!pacoteAtual||el.classList.contains('virada')||el.dataset.processando)return;
+ el.classList.add('virada');el.setAttribute('aria-label','Carta revelada');
+ const carta=pacoteAtual.cartas[i];
+   try { await window.RB.adicionarCartas(reinoJogador,[carta.id]); }
+  catch(e) { delete el.dataset.processando; aviso('Erro ao salvar a carta: '+e.message); return; }
+  el.classList.add('virada');el.setAttribute('aria-label','Carta revelada');
+reveladas++;
+ $('resultado').textContent=reveladas+' de 3 cartas reveladas • '+carta.nome+' adicionada ao inventário!';
+ if(reveladas===3){$('resultado').textContent='✨ Pacote completo! As 3 cartas estão no seu inventário.';$('concluir').classList.remove('oculto');$('outro').classList.remove('oculto')}
+}
+function concluir(){location.href='inventario.html'}
+function outroPacote(){if(reveladas<3)return;pacoteAtual=null;$('abertura').classList.add('oculto');mostrarPacotes();window.scrollTo({top:0,behavior:'smooth'})}
+mostrarPacotes();
+if(catalogo().length===0)aviso('⚠️ Nenhuma carta encontrada no catálogo online. O GitHub Pages não compartilha as cartas criadas no computador do Admin. Precisaremos de um banco de dados para sincronizar os jogadores.');
+
+window.concluir=concluir;
+window.outroPacote=outroPacote;
+
+</script></body></html>

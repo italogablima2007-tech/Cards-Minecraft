@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reinos & Batalhas</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="login-container">
+
+        <h1>⚔️ REINOS & BATALHAS ⚔️</h1>
+
+        <p>Escolha seu Reino e entre com sua conta Firebase</p>
+
+        <div class="reinos">
+
+            <button onclick="entrarReino('Drakmor')">
+                ❄️ DRAKMOR
+            </button>
+
+            <button onclick="entrarReino('Solaris')">
+                ☀️ SOLARIS
+            </button>
+
+            <button onclick="entrarReino('Aetheryon')">
+                ☁️ AETHERYON
+            </button>
+
+        </div>
+
+        <div id="login-reino" class="login-admin" style="display:none"><h2 id="reino-selecionado">Reino</h2><input type="email" id="email-reino" placeholder="E-mail do jogador" autocomplete="username"><input type="password" id="senha-reino" placeholder="Senha" autocomplete="current-password"><button onclick="confirmarReino()">Entrar no Reino</button><p id="erro-reino"></p></div>
+
+        <div class="admin">
+
+            <button onclick="abrirAdmin()">
+                ⚙️ ADMIN
+            </button>
+
+        </div>
+
+        <div id="login-admin" class="login-admin">
+
+            <h2>🔐 Acesso Administrativo</h2>
+
+            <input type="email" id="email-admin" placeholder="E-mail do administrador" autocomplete="username" required>
+
+            <input
+                type="password"
+                id="senha-admin"
+                placeholder="Digite a senha"
+            >
+
+            <button onclick="entrarAdmin()">
+                Entrar
+            </button>
+
+            <p id="erro-senha"></p>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="firebase-config.js"></script>
+    <script src="script.js"></script>
+
+</body>
+
+</html>

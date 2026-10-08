@@ -1,0 +1,6 @@
+let escolhaReino=null;
+function entrarReino(reino){escolhaReino=reino;document.getElementById('login-reino').style.display='block';document.getElementById('reino-selecionado').textContent='🔐 '+reino;document.getElementById('login-admin').style.display='none';document.getElementById('email-reino').focus()}
+function abrirAdmin(){document.getElementById('login-admin').style.display='block';document.getElementById('login-reino').style.display='none';document.getElementById('email-admin').focus()}
+async function confirmarReino(){const erro=document.getElementById('erro-reino');erro.textContent='Entrando...';try{await window.RB.entrar(document.getElementById('email-reino').value,document.getElementById('senha-reino').value,escolhaReino)}catch(e){erro.textContent='❌ '+e.message}}
+async function entrarAdmin(){const erro=document.getElementById('erro-senha');erro.textContent='Entrando...';try{await window.RB.entrar(document.getElementById('email-admin').value,document.getElementById('senha-admin').value,'Admin')}catch(e){erro.textContent='❌ '+e.message}}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-admin').style.display==='block')entrarAdmin();else if(e.key==='Enter'&&document.getElementById('login-reino').style.display==='block')confirmarReino()});
