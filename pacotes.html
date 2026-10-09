@@ -15,8 +15,8 @@
 </head>
 <body id="corpo-painel"><main class="painel-container">
 <header class="topo-painel"><div><p class="pequeno-titulo">🎴 REINOS & BATALHAS</p><h1>🎁 Pacotes de Cartas</h1><p id="subtitulo">Escolha um pacote para abrir</p></div><button class="botao-sair" onclick="location.href='painel.html'">← Voltar</button></header>
-<section class="secao-painel"><div class="titulo-secao"><h2>Escolha seu pacote</h2></div><p>São 3 cartas garantidas de cada Reino. Aberturas ilimitadas nesta versão de teste.</p><div id="pacotes" class="pacotes-grade"></div><p id="aviso" class="aviso-pacote" style="display:none"></p></section>
-<section id="abertura" class="abertura oculto" aria-live="polite"><h2 id="titulo-abertura">Abrindo pacote...</h2><p>Toque em cada carta para revelá-la.</p><div id="cartas-revelar" class="cartas-revelar"></div><p id="resultado" class="resultado"></p><button id="concluir" class="acao oculto" onclick="concluir()">🎒 Ver Inventário</button><button id="outro" class="acao oculto" onclick="outroPacote()">🎁 Abrir Outro Pacote</button></section>
+<section class="secao-painel"><div class="titulo-secao"><h2>Escolha seu pacote</h2></div><p>Os presentes do Admin aparecem acima dos pacotes comuns. São 3 cartas garantidas nos pacotes comuns. Aberturas ilimitadas nesta versão de teste.</p><div id="presentes" class="pacotes-grade"></div><div id="pacotes" class="pacotes-grade"></div><p id="aviso" class="aviso-pacote" style="display:none"></p></section>
+<section id="abertura" class="abertura oculto" aria-live="polite"><h2 id="titulo-abertura">Abrindo pacote...</h2><p>Toque em cada carta para revelá-la.</p><div id="cartas-revelar" class="cartas-revelar"></div><p id="resultado" class="resultado"></p><button id="concluir" class="acao oculto" onclick="concluir()">🎒 Ver Inventário</button><button id="outro" class="acao oculto" onclick="outroPacote()">🎁 Voltar aos Pacotes</button></section>
 </main><script type="module">
 import "./firebase-config.js";
 const sessao=await window.RB.exigir();
@@ -31,6 +31,27 @@ const reinos=[{nome:'Drakmor',icone:'❄️',desc:'Agricultura e Tecnologia'},{n
 const $=id=>document.getElementById(id);
 const esc=t=>{const d=document.createElement('div');d.textContent=String(t??'');return d.innerHTML};
 const cartasOnline=await window.RB.listarCartas();
+let presentes=[];
+async function carregarPresentes(){
+ try{
+  presentes=await window.RB.listarPacotesRecebidos(reinoJogador);
+  $('presentes').innerHTML=presentes.length?presentes.map(p=>`<article class="pacote"><div class="icone">🎁</div><h3>${esc(p.nome)}</h3><p>Presente do Admin</p><p>🎴 ${p.cartas.length} cartas</p><button data-presente="${esc(p.id)}">🎁 Abrir presente</button></article>`).join(''):'<p>🎁 Nenhum pacote especial pendente.</p>';
+  $('presentes').querySelectorAll('button[data-presente]').forEach(b=>b.addEventListener('click',()=>abrirPresente(b.dataset.presente)));
+ }catch(e){aviso('Não foi possível carregar presentes: '+e.message)}
+}
+async function abrirPresente(id){
+ if(pacoteAtual)return;
+ const presente=presentes.find(x=>x.id===id);if(!presente)return;
+ try{
+  const ids=await window.RB.resgatarPacote(id,reinoJogador);
+  const selecionadas=ids.map(id=>cartasOnline.find(c=>String(c.id)===String(id))).filter(Boolean);
+  if(selecionadas.length!==ids.length)aviso('Algumas cartas do presente não estão mais no catálogo. Elas foram registradas no inventário pelo ID.');
+  if(selecionadas.length)montarAbertura('🎁 '+presente.nome,selecionadas,true);
+  else aviso('Presente resgatado. Veja as cartas no inventário.');
+  await carregarPresentes();
+ }catch(e){aviso('Erro ao resgatar presente: '+e.message)}
+}
+
 const catalogo=()=>cartasOnline;
 let pacoteAtual=null,reveladas=0;
 function mostrarPacotes(){
@@ -44,9 +65,12 @@ function abrirPacote(reino){
  if(cartas.length<3){aviso('Cadastre pelo menos 3 cartas de '+reino+' no catálogo online antes de abrir.');return}
  // Três cartas distintas, garantidas; quando houver mais de três, usa as três primeiras cadastradas.
  const selecionadas=cartas.slice(0,3);
- pacoteAtual={reino,cartas:selecionadas};reveladas=0;
- $('abertura').classList.remove('oculto');$('titulo-abertura').textContent='🎁 Pacote '+reino;
- $('resultado').textContent='0 de 3 cartas reveladas';$('concluir').classList.add('oculto');$('outro').classList.add('oculto');
+ montarAbertura('🎁 Pacote '+reino,selecionadas,false);
+}
+function montarAbertura(titulo,selecionadas,presente){
+ pacoteAtual={cartas:selecionadas,presente};reveladas=0;
+ $('abertura').classList.remove('oculto');$('titulo-abertura').textContent=titulo;
+ $('resultado').textContent='0 de '+selecionadas.length+' cartas reveladas';$('concluir').classList.add('oculto');$('outro').classList.add('oculto');
  $('cartas-revelar').replaceChildren();
  selecionadas.forEach((c,i)=>{
   const el=document.createElement('div');el.className='carta-virar';el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label','Revelar carta '+(i+1));
@@ -60,18 +84,21 @@ function abrirPacote(reino){
 }
 async function revelar(el,i){
  if(!pacoteAtual||el.classList.contains('virada')||el.dataset.processando)return;
- el.classList.add('virada');el.setAttribute('aria-label','Carta revelada');
+ el.dataset.processando='1';
  const carta=pacoteAtual.cartas[i];
-   try { await window.RB.adicionarCartas(reinoJogador,[carta.id]); }
-  catch(e) { delete el.dataset.processando; aviso('Erro ao salvar a carta: '+e.message); return; }
+ try{
+  if(!pacoteAtual.presente)await window.RB.adicionarCartas(reinoJogador,[carta.id]);
   el.classList.add('virada');el.setAttribute('aria-label','Carta revelada');
-reveladas++;
- $('resultado').textContent=reveladas+' de 3 cartas reveladas • '+carta.nome+' adicionada ao inventário!';
- if(reveladas===3){$('resultado').textContent='✨ Pacote completo! As 3 cartas estão no seu inventário.';$('concluir').classList.remove('oculto');$('outro').classList.remove('oculto')}
+  reveladas++;
+  const total=pacoteAtual.cartas.length;
+  $('resultado').textContent=reveladas+' de '+total+' cartas reveladas • '+carta.nome+' no inventário!';
+  if(reveladas===total){$('resultado').textContent='✨ Pacote completo! Todas as cartas estão no seu inventário.';$('concluir').classList.remove('oculto');$('outro').classList.remove('oculto')}
+ }catch(e){aviso('Erro ao salvar carta: '+e.message)}finally{delete el.dataset.processando}
 }
 function concluir(){location.href='inventario.html'}
-function outroPacote(){if(reveladas<3)return;pacoteAtual=null;$('abertura').classList.add('oculto');mostrarPacotes();window.scrollTo({top:0,behavior:'smooth'})}
+function outroPacote(){if(!pacoteAtual||reveladas<pacoteAtual.cartas.length)return;pacoteAtual=null;$('abertura').classList.add('oculto');mostrarPacotes();window.scrollTo({top:0,behavior:'smooth'})}
 mostrarPacotes();
+await carregarPresentes();
 if(catalogo().length===0)aviso('⚠️ Nenhuma carta encontrada no catálogo online. O GitHub Pages não compartilha as cartas criadas no computador do Admin. Precisaremos de um banco de dados para sincronizar os jogadores.');
 
 window.concluir=concluir;
