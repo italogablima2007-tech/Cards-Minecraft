@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -5,98 +6,1203 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventário de Cartas | Reinos & Batalhas</title>
 <link rel="stylesheet" href="style.css">
+
 <style>
-.grade-inventario{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px}
-.resumo-inventario{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px}
-.carta-inventario{overflow:hidden;border:1px solid var(--borda);border-radius:18px;background:var(--fundo-card);cursor:pointer;transition:.2s}
-.carta-inventario:hover{transform:translateY(-5px)}
-.arte-inventario{height:260px;position:relative;overflow:hidden;background:#111}
-.fundo-inventario,.criatura-inventario{position:absolute;inset:0;width:100%;height:100%}
-.fundo-inventario{object-fit:cover}.criatura-inventario{object-fit:contain;z-index:2}
-.sombra-inventario{position:absolute;inset:0;z-index:3;background:linear-gradient(transparent 45%,rgba(0,0,0,.85))}
-.badge{position:absolute;z-index:4;top:12px;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.75);font-weight:bold}
-.raridade{left:12px}.quantidade{right:12px}
-.nome-arte{position:absolute;z-index:4;left:14px;right:14px;bottom:12px;margin:0}
-.dados-inventario{padding:14px}.linha{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.status{display:grid;grid-template-columns:1fr 1fr;gap:8px}.status span{padding:7px;background:rgba(255,255,255,.06);border-radius:9px;text-align:center}
-.vazio{grid-column:1/-1;padding:45px 20px;text-align:center;border:1px dashed var(--borda);border-radius:16px}
-.modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);align-items:center;justify-content:center;padding:20px}
-.modal.aberto{display:flex}.modal-box{position:relative;width:min(760px,96vw);max-height:90vh;overflow:auto;background:#10151d;border:1px solid var(--borda);border-radius:18px;padding:22px}
-.fechar{position:absolute;right:12px;top:12px}.habilidade{padding:12px;margin-top:10px;border-radius:12px;background:rgba(255,255,255,.05)}
-.aviso{padding:12px;margin-bottom:18px;border:1px solid var(--borda);border-radius:12px}
+.grade-inventario{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:22px;
+}
+
+.resumo-inventario{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.carta-inventario{
+  overflow:hidden;
+  border:1px solid var(--borda);
+  border-radius:18px;
+  background:var(--fundo-card);
+  cursor:pointer;
+  transition:.2s;
+}
+
+.carta-inventario:hover{
+  transform:translateY(-5px);
+}
+
+.arte-inventario{
+  height:260px;
+  position:relative;
+  overflow:hidden;
+  background:#111;
+}
+
+.fundo-inventario,
+.criatura-inventario{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+
+.fundo-inventario{
+  object-fit:cover;
+}
+
+.criatura-inventario{
+  object-fit:contain;
+  z-index:2;
+}
+
+.sombra-inventario{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  background:linear-gradient(
+    transparent 45%,
+    rgba(0,0,0,.85)
+  );
+}
+
+.badge{
+  position:absolute;
+  z-index:4;
+  top:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(0,0,0,.75);
+  font-weight:bold;
+  font-size:12px;
+}
+
+.raridade{
+  left:12px;
+}
+
+.quantidade{
+  right:12px;
+}
+
+.nome-arte{
+  position:absolute;
+  z-index:4;
+  left:14px;
+  right:14px;
+  bottom:12px;
+  margin:0;
+}
+
+.dados-inventario{
+  padding:14px;
+}
+
+.linha{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.status{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.status span{
+  padding:7px;
+  background:rgba(255,255,255,.06);
+  border-radius:9px;
+  text-align:center;
+}
+
+.vazio{
+  grid-column:1/-1;
+  padding:45px 20px;
+  text-align:center;
+  border:1px dashed var(--borda);
+  border-radius:16px;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:rgba(0,0,0,.8);
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal.aberto{
+  display:flex;
+}
+
+.modal-box{
+  position:relative;
+  width:min(760px,96vw);
+  max-height:90vh;
+  overflow:auto;
+  background:#10151d;
+  border:1px solid var(--borda);
+  border-radius:18px;
+  padding:22px;
+}
+
+.fechar{
+  position:absolute;
+  right:12px;
+  top:12px;
+  cursor:pointer;
+}
+
+.habilidade{
+  padding:12px;
+  margin-top:10px;
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+}
+
+.aviso{
+  padding:12px;
+  margin-bottom:18px;
+  border:1px solid var(--borda);
+  border-radius:12px;
+}
+
+.barra-xp{
+  width:100%;
+  height:12px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#303746;
+  margin:9px 0 5px;
+}
+
+.progresso-xp{
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#3689e9,#7ed4ff);
+  transition:width .3s;
+}
+
+.texto-xp{
+  font-size:12px;
+  color:#aab8c9;
+}
+
+.area-evolucao{
+  margin-top:20px;
+  padding:17px;
+  border:1px solid #8266c9;
+  border-radius:13px;
+  background:rgba(120,75,190,.09);
+}
+
+.area-evolucao h3{
+  margin-top:0;
+}
+
+.botoes-acoes{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:16px;
+}
+
+.botao-treinar,
+.botao-evolucao{
+  flex:1;
+  min-width:150px;
+  border:0;
+  border-radius:10px;
+  padding:13px;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.botao-treinar{
+  background:#236fbb;
+}
+
+.botao-evolucao{
+  background:#7842b5;
+}
+
+.botao-treinar:disabled,
+.botao-evolucao:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.arte-modal{
+  position:relative;
+  height:280px;
+  max-width:350px;
+  overflow:hidden;
+  border-radius:14px;
+  background:#080d13;
+  margin:14px auto;
+}
+
+.arte-modal img{
+  position:absolute;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+.arte-modal img:first-child:not(:last-child){
+  object-fit:cover;
+}
+
+.info-evolucao{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-top:12px;
+}
+
+.info-evolucao img{
+  width:90px;
+  height:110px;
+  object-fit:contain;
+  background:#111;
+  border-radius:10px;
+}
+
+.etapa{
+  font-size:12px;
+  color:#cbb7ff;
+  font-weight:bold;
+}
+
+.detalhes-xp{
+  margin:16px 0;
+  padding:14px;
+  border-radius:12px;
+  background:rgba(255,255,255,.045);
+}
+
+@media(max-width:480px){
+  .modal-box{
+    padding:15px;
+  }
+}
 </style>
 </head>
+
 <body id="corpo-painel">
+
 <main class="painel-container">
+
 <header class="topo-painel">
-<div><p class="pequeno-titulo">🎴 REINOS & BATALHAS</p><h1>Inventário de Cartas</h1><p id="subtitulo">Carregando...</p></div>
-<button class="botao-sair" onclick="location.href='painel.html'">← Voltar</button>
+  <div>
+    <p class="pequeno-titulo">🎴 REINOS & BATALHAS</p>
+    <h1>Inventário de Cartas</h1>
+    <p id="subtitulo">Carregando...</p>
+  </div>
+
+  <button
+    class="botao-sair"
+    onclick="location.href='painel.html'"
+  >
+    ← Voltar
+  </button>
 </header>
+
 <section class="secao-painel">
-<div class="titulo-secao"><h2>📚 Minhas Cartas</h2></div>
-<div class="resumo-inventario">
-<div class="card"><span class="icone-card">🎴</span><h2>Cartas</h2><p id="total">0</p></div>
-<div class="card"><span class="icone-card">✨</span><h2>Diferentes</h2><p id="diferentes">0</p></div>
-<div class="card"><span class="icone-card">👑</span><h2>Reino</h2><p id="reino">---</p></div>
-</div>
-<div id="aviso" class="aviso" style="display:none"></div>
-<div id="grade" class="grade-inventario"></div>
+
+  <div class="titulo-secao">
+    <h2>📚 Minhas Cartas</h2>
+  </div>
+
+  <div class="resumo-inventario">
+
+    <div class="card">
+      <span class="icone-card">🎴</span>
+      <h2>Cartas</h2>
+      <p id="total">0</p>
+    </div>
+
+    <div class="card">
+      <span class="icone-card">✨</span>
+      <h2>Diferentes</h2>
+      <p id="diferentes">0</p>
+    </div>
+
+    <div class="card">
+      <span class="icone-card">👑</span>
+      <h2>Reino</h2>
+      <p id="reino">---</p>
+    </div>
+
+  </div>
+
+  <div
+    id="aviso"
+    class="aviso"
+    style="display:none"
+  ></div>
+
+  <div id="grade" class="grade-inventario"></div>
+
 </section>
+
 </main>
-<div id="modal" class="modal" onclick="if(event.target===this)fechar()"><div class="modal-box"><button class="fechar" onclick="fechar()">✕</button><div id="detalhes"></div></div></div>
+
+<div
+  id="modal"
+  class="modal"
+  onclick="if(event.target===this)fechar()"
+>
+  <div class="modal-box">
+    <button
+      class="fechar"
+      onclick="fechar()"
+    >
+      ✕
+    </button>
+
+    <div id="detalhes"></div>
+  </div>
+</div>
+
 <script type="module">
 import "./firebase-config.js";
-const sessao=await window.RB.exigir();
 
-const usuario=sessao.reino;
-if(!usuario) location.href="index.html";
-const reino=usuario==="Admin"?localStorage.getItem("reinoAdministrado"):usuario;
-if(!reino){alert("Nenhum Reino selecionado.");location.href="painel.html";}
-document.body.classList.add("tema-"+reino.toLowerCase());
-document.getElementById("subtitulo").textContent="Inventário de "+reino;
-document.getElementById("reino").textContent=reino;
+// ==================================================
+// SESSÃO
+// ==================================================
 
-const catalogo=await window.RB.listarCartas();
-const chave="inventario_"+reino;
-let inventario=await window.RB.inventario(reino);
+const sessao = await window.RB.exigir();
 
-const cartaPorId=id=>catalogo.find(c=>String(c.id)===String(id));
-const esc=t=>{const d=document.createElement("div");d.textContent=t??"";return d.innerHTML};
-const criatura=c=>c.imagemCriatura||c.imagemPersonagem||c.imagem||"";
-const fundo=c=>c.imagemFundo||c.fundo||c.cenario||"";
+const usuario = sessao.reino;
 
-function mostrar(){
- const validos=inventario.map(i=>({i,c:cartaPorId(i.idCarta)})).filter(x=>x.c);
- total.textContent=validos.reduce((s,x)=>s+(Number(x.i.quantidade)||1),0);
- diferentes.textContent=validos.length;
- if(!validos.length){grade.innerHTML='<div class="vazio"><h3>🎴 Inventário vazio</h3><p>As cartas obtidas nos pacotes aparecerão aqui.</p></div>';return;}
- grade.innerHTML=validos.map(({i,c})=>`
- <article class="carta-inventario" onclick="abrir('${c.id}')">
-  <div class="arte-inventario">
-   ${fundo(c)?`<img class="fundo-inventario" src="${esc(fundo(c))}">`:""}
-   ${criatura(c)?`<img class="criatura-inventario" src="${esc(criatura(c))}">`:""}
-   <div class="sombra-inventario"></div>
-   <span class="badge raridade">${esc(c.raridade)}</span><span class="badge quantidade">x${i.quantidade||1}</span>
-   <h3 class="nome-arte">${esc(c.nome)}</h3>
-  </div>
-  <div class="dados-inventario"><div class="linha"><span>👑 ${esc(c.reino)}</span><span>⭐ Nível ${i.nivel||1}</span></div>
-  <div class="status"><span>❤️ ${c.vida}</span><span>⚔️ ${c.ataque}</span><span>🛡️ ${c.defesa}</span><span>⚡ ${c.velocidade}</span></div></div>
- </article>`).join("");
+if (!usuario) {
+  location.href = "index.html";
 }
 
-function abrir(id){
- const c=cartaPorId(id),i=inventario.find(x=>String(x.idCarta)===String(id));if(!c||!i)return;
- const ats=(c.ataques||[]).map(a=>`<div class="habilidade"><h4>⚔️ ${esc(a.nome)}</h4><p>💥 ${a.danoMin}–${a.danoMax} | 🎯 ${a.precisao}% | ${esc(a.tipo)}</p>${a.efeito?`<p>✨ ${esc(a.efeito.tipo)}: ${a.efeito.valor}% por ${a.efeito.duracao} turno(s)</p>`:""}</div>`).join("");
- const pas=(c.passivas||[]).map(p=>`<div class="habilidade"><h4>⭐ ${esc(p.nome)}</h4><p>${esc(p.descricao||"")}</p>${p.efeito?`<p>✨ ${esc(p.efeito.tipo)}: ${p.efeito.valor}%</p>`:""}</div>`).join("");
- detalhes.innerHTML=`<p class="pequeno-titulo">${esc(c.raridade)} • ${esc(c.reino)}</p><h2>${esc(c.nome)}</h2><p>${esc(c.classe||"Sem classe")} • ⭐ Nível ${i.nivel||1}</p><div class="status"><span>❤️ ${c.vida}</span><span>⚔️ ${c.ataque}</span><span>🛡️ ${c.defesa}</span><span>⚡ ${c.velocidade}</span></div><h3>⚔️ Ataques</h3>${ats||"<p>Nenhum ataque.</p>"}${pas?`<h3>⭐ Passivas</h3>${pas}`:""}`;
- modal.classList.add("aberto");
+const reino = usuario === "Admin"
+  ? localStorage.getItem("reinoAdministrado")
+  : usuario;
+
+if (!reino) {
+  alert("Nenhum Reino selecionado.");
+  location.href = "painel.html";
 }
-function fechar(){modal.classList.remove("aberto")}
+
+document.body.classList.add(
+  "tema-" + reino.toLowerCase()
+);
+
+document.getElementById("subtitulo").textContent =
+  "Inventário de " + reino;
+
+document.getElementById("reino").textContent = reino;
+
+// Admin pode visualizar, mas não treinar nem evoluir
+// cartas de outros reinos.
+
+const podeModificar =
+  !sessao.admin && sessao.reino === reino;
+
+// ==================================================
+// DADOS
+// ==================================================
+
+let catalogo = await window.RB.listarCartas();
+let inventario = await window.RB.inventario(reino);
+
+let cartaAberta = null;
+let processando = false;
+
+const $ = id => document.getElementById(id);
+
+const cartaPorId = id =>
+  catalogo.find(carta =>
+    String(carta.id) === String(id)
+  );
+
+const itemPorId = id =>
+  inventario.find(item =>
+    String(item.idCarta) === String(id)
+  );
+
+const esc = texto => {
+  const div = document.createElement("div");
+  div.textContent = String(texto ?? "");
+  return div.innerHTML;
+};
+
+const criatura = carta =>
+  carta.imagemCriatura ||
+  carta.imagemPersonagem ||
+  carta.imagem ||
+  "";
+
+const fundo = carta =>
+  carta.imagemFundo ||
+  carta.fundo ||
+  carta.cenario ||
+  "";
+
+const nivelItem = item => {
+  const nivel = Number(item?.nivel ?? 0);
+  return Number.isFinite(nivel)
+    ? Math.max(0, Math.min(30, nivel))
+    : 0;
+};
+
+const quantidadeItem = item =>
+  Math.max(0, Number(item?.quantidade || 0));
+
+// ==================================================
+// EVOLUÇÕES
+// ==================================================
+
+function evolucaoDoNivel(carta, nivel) {
+  const evolucoes = Array.isArray(carta.evolucoes)
+    ? carta.evolucoes
+    : [];
+
+  return evolucoes.find(
+    evolucao => Number(evolucao.nivel) === Number(nivel)
+  ) || null;
+}
+
+function proximaEvolucao(carta, nivel) {
+  if (nivel <= 10) {
+    return evolucaoDoNivel(carta, 11);
+  }
+
+  if (nivel <= 20) {
+    return evolucaoDoNivel(carta, 21);
+  }
+
+  return null;
+}
+
+function atributos(carta, item) {
+  return window.RB.atributosCarta(carta, item);
+}
+
+function imagemAtual(carta, item) {
+  const nivel = nivelItem(item);
+
+  const segunda = evolucaoDoNivel(carta, 21);
+  const primeira = evolucaoDoNivel(carta, 11);
+
+  if (nivel >= 21 && segunda?.imagem) {
+    return segunda.imagem;
+  }
+
+  if (nivel >= 11 && primeira?.imagem) {
+    return primeira.imagem;
+  }
+
+  return criatura(carta);
+}
+
+function fundoAtual(carta, item) {
+  const nivel = nivelItem(item);
+
+  const segunda = evolucaoDoNivel(carta, 21);
+  const primeira = evolucaoDoNivel(carta, 11);
+
+  if (nivel >= 21 && segunda?.fundo) {
+    return segunda.fundo;
+  }
+
+  if (nivel >= 11 && primeira?.fundo) {
+    return primeira.fundo;
+  }
+
+  return fundo(carta);
+}
+
+// ==================================================
+// XP
+// ==================================================
+
+function xpAtual(item) {
+  return Math.max(0, Number(item?.xp || 0));
+}
+
+function xpMaximo(item) {
+  return window.RB.xpNecessario(nivelItem(item));
+}
+
+function porcentagemXP(item) {
+  const necessario = xpMaximo(item);
+
+  if (!necessario) {
+    return 100;
+  }
+
+  return Math.min(
+    100,
+    Math.max(0, (xpAtual(item) / necessario) * 100)
+  );
+}
+
+function barraXP(item) {
+  const nivel = nivelItem(item);
+
+  if (nivel >= 30) {
+    return `
+      <div class="barra-xp">
+        <div class="progresso-xp" style="width:100%"></div>
+      </div>
+      <p class="texto-xp">🏆 Nível máximo alcançado!</p>
+    `;
+  }
+
+  return `
+    <div class="barra-xp">
+      <div
+        class="progresso-xp"
+        style="width:${porcentagemXP(item)}%"
+      ></div>
+    </div>
+
+    <p class="texto-xp">
+      ✨ XP: ${xpAtual(item)} / ${xpMaximo(item)}
+    </p>
+  `;
+}
+
+function tempoRestanteTreino(item) {
+  const ultimo = Number(item?.ultimoTreino || 0);
+  const intervalo = 4 * 60 * 60 * 1000;
+
+  return Math.max(
+    0,
+    ultimo + intervalo - Date.now()
+  );
+}
+
+function formatarTempo(ms) {
+  const minutos = Math.ceil(ms / 60000);
+
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+
+  if (horas > 0) {
+    return `${horas}h ${String(resto).padStart(2, "0")}min`;
+  }
+
+  return `${resto}min`;
+}
+
+// ==================================================
+// ATUALIZAR INVENTÁRIO
+// ==================================================
+
+async function atualizarInventario() {
+  inventario = await window.RB.inventario(reino);
+
+  mostrar();
+
+  if (cartaAberta !== null) {
+    abrir(cartaAberta);
+  }
+}
+
+// ==================================================
+// MOSTRAR CARTAS
+// ==================================================
+
+function mostrar() {
+  const validos = inventario
+    .map(item => ({
+      item,
+      carta: cartaPorId(item.idCarta)
+    }))
+    .filter(registro => registro.carta);
+
+  $("total").textContent = validos.reduce(
+    (total, registro) =>
+      total + quantidadeItem(registro.item),
+    0
+  );
+
+  $("diferentes").textContent = validos.length;
+
+  if (!validos.length) {
+    $("grade").innerHTML = `
+      <div class="vazio">
+        <h3>🎴 Inventário vazio</h3>
+        <p>
+          As cartas obtidas nos pacotes aparecerão aqui.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  $("grade").innerHTML = validos.map(({ item, carta }) => {
+    const dados = atributos(carta, item);
+    const imagem = imagemAtual(carta, item);
+    const cenario = fundoAtual(carta, item);
+
+    return `
+      <article
+        class="carta-inventario"
+        data-id="${esc(carta.id)}"
+      >
+        <div class="arte-inventario">
+
+          ${cenario ? `
+            <img
+              class="fundo-inventario"
+              src="${esc(cenario)}"
+              alt=""
+            >
+          ` : ""}
+
+          ${imagem ? `
+            <img
+              class="criatura-inventario"
+              src="${esc(imagem)}"
+              alt="${esc(dados.nome)}"
+            >
+          ` : ""}
+
+          <div class="sombra-inventario"></div>
+
+          <span class="badge raridade">
+            ${esc(dados.raridade)}
+          </span>
+
+          <span class="badge quantidade">
+            x${quantidadeItem(item)}
+          </span>
+
+          <h3 class="nome-arte">
+            ${esc(dados.nome)}
+          </h3>
+
+        </div>
+
+        <div class="dados-inventario">
+
+          <div class="linha">
+            <span>👑 ${esc(carta.reino)}</span>
+            <span>⭐ Nível ${nivelItem(item)}</span>
+          </div>
+
+          <div class="status">
+            <span>❤️ ${dados.vida}</span>
+            <span>⚔️ ${dados.ataque}</span>
+            <span>🛡️ ${dados.defesa}</span>
+            <span>⚡ ${dados.velocidade}</span>
+          </div>
+
+          ${barraXP(item)}
+
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  document.querySelectorAll(
+    ".carta-inventario"
+  ).forEach(elemento => {
+    elemento.addEventListener("click", () => {
+      abrir(elemento.dataset.id);
+    });
+  });
+}
+
+// ==================================================
+// MOSTRAR EVOLUÇÃO
+// ==================================================
+
+function painelEvolucao(carta, item) {
+  const nivel = nivelItem(item);
+  const evolucao = proximaEvolucao(carta, nivel);
+
+  if (!evolucao) {
+    if (nivel >= 21) {
+      return `
+        <div class="area-evolucao">
+          <h3>👑 Evolução final</h3>
+          <p>
+            Esta carta já alcançou sua última forma
+            de evolução disponível.
+          </p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="area-evolucao">
+        <h3>🧬 Evolução</h3>
+        <p>
+          Nenhuma evolução cadastrada para
+          esta etapa da carta.
+        </p>
+      </div>
+    `;
+  }
+
+  const nivelExigido = Number(evolucao.nivel);
+  const nivelAnterior = nivelExigido - 1;
+
+  const duplicatas = Math.max(
+    0,
+    Number(
+      evolucao.duplicatas ??
+      (nivelExigido === 11 ? 3 : 5)
+    )
+  );
+
+  const extras = Math.max(
+    0,
+    quantidadeItem(item) - 1
+  );
+
+  const faltam = Math.max(0, duplicatas - extras);
+
+  const xpSuficiente =
+    xpAtual(item) >= window.RB.xpNecessario(nivelAnterior);
+
+  const pronto =
+    nivel === nivelAnterior &&
+    xpSuficiente &&
+    faltam === 0;
+
+  const imagem = evolucao.imagem || imagemAtual(carta, item);
+
+  const requisitoNivel =
+    nivel >= nivelAnterior
+      ? "✅"
+      : "❌";
+
+  const requisitoXP =
+    xpSuficiente && nivel === nivelAnterior
+      ? "✅"
+      : "❌";
+
+  const requisitoDuplicatas =
+    faltam === 0
+      ? "✅"
+      : "❌";
+
+  return `
+    <div class="area-evolucao">
+
+      <h3>🧬 Próxima Evolução</h3>
+
+      <div class="info-evolucao">
+
+        ${imagem ? `
+          <img src="${esc(imagem)}" alt="">
+        ` : ""}
+
+        <div>
+          <p class="etapa">
+            EVOLUÇÃO DO NÍVEL ${nivelAnterior}
+            PARA ${nivelExigido}
+          </p>
+
+          <h3>
+            ${esc(evolucao.nome || carta.nome)}
+          </h3>
+
+          <p>
+            ✨ ${esc(evolucao.raridade || carta.raridade)}
+          </p>
+        </div>
+
+      </div>
+
+      <p>
+        ${requisitoNivel}
+        Nível necessário: ${nivelAnterior}
+      </p>
+
+      <p>
+        ${requisitoXP}
+        XP necessário:
+        ${window.RB.xpNecessario(nivelAnterior)}
+      </p>
+
+      <p>
+        ${requisitoDuplicatas}
+        Duplicatas:
+        ${extras} / ${duplicatas}
+      </p>
+
+      ${faltam > 0 ? `
+        <p>📦 Faltam ${faltam} duplicatas.</p>
+      ` : ""}
+
+      ${nivel < nivelAnterior ? `
+        <p>
+          Continue treinando para desbloquear
+          esta evolução.
+        </p>
+      ` : ""}
+
+      ${podeModificar ? `
+        <button
+          class="botao-evolucao"
+          id="botao-evoluir"
+          ${pronto ? "" : "disabled"}
+        >
+          🧬 Evoluir Carta
+        </button>
+      ` : ""}
+
+    </div>
+  `;
+}
+
+// ==================================================
+// ABRIR DETALHES
+// ==================================================
+
+function abrir(id) {
+  const carta = cartaPorId(id);
+  const item = itemPorId(id);
+
+  if (!carta || !item) {
+    return;
+  }
+
+  cartaAberta = id;
+
+  const dados = atributos(carta, item);
+  const imagem = imagemAtual(carta, item);
+  const cenario = fundoAtual(carta, item);
+
+  const ataques = (carta.ataques || []).map(ataque => `
+    <div class="habilidade">
+
+      <h4>⚔️ ${esc(ataque.nome)}</h4>
+
+      <p>
+        💥 ${ataque.danoMin ?? 0}–${ataque.danoMax ?? 0}
+        | 🎯 ${ataque.precisao ?? 100}%
+        | ${esc(ataque.tipo || "Físico")}
+      </p>
+
+      ${ataque.efeito ? `
+        <p>
+          ✨ ${esc(ataque.efeito.tipo)}:
+          ${ataque.efeito.valor ?? 0}%
+          por ${ataque.efeito.duracao ?? 0} turno(s)
+        </p>
+      ` : ""}
+
+    </div>
+  `).join("");
+
+  const passivas = (carta.passivas || []).map(passiva => `
+    <div class="habilidade">
+
+      <h4>⭐ ${esc(passiva.nome)}</h4>
+
+      <p>${esc(passiva.descricao || "")}</p>
+
+      ${passiva.efeito ? `
+        <p>
+          ✨ ${esc(passiva.efeito.tipo)}:
+          ${passiva.efeito.valor ?? 0}%
+        </p>
+      ` : ""}
+
+    </div>
+  `).join("");
+
+  const restante = tempoRestanteTreino(item);
+  const nivel = nivelItem(item);
+
+  const bloqueadoEvolucao = (
+    nivel === 10 && evolucaoDoNivel(carta, 11)
+  ) || (
+    nivel === 20 && evolucaoDoNivel(carta, 21)
+  );
+
+  const xpCheio = bloqueadoEvolucao &&
+    xpAtual(item) >= xpMaximo(item);
+
+  const podeTreinar =
+    podeModificar &&
+    nivel < 30 &&
+    restante === 0 &&
+    !xpCheio &&
+    !processando;
+
+  $("detalhes").innerHTML = `
+    <p class="pequeno-titulo">
+      ${esc(dados.raridade)} • ${esc(carta.reino)}
+    </p>
+
+    <h2>${esc(dados.nome)}</h2>
+
+    <p>
+      ${esc(carta.classe || "Sem classe")}
+      • ⭐ Nível ${nivel}
+      • 🎴 ${quantidadeItem(item)} cópia(s)
+    </p>
+
+    <div class="arte-modal">
+      ${cenario ? `
+        <img
+          src="${esc(cenario)}"
+          alt=""
+          style="object-fit:cover"
+        >
+      ` : ""}
+
+      ${imagem ? `
+        <img
+          src="${esc(imagem)}"
+          alt=""
+          style="z-index:2"
+        >
+      ` : ""}
+    </div>
+
+    <div class="status">
+      <span>❤️ ${dados.vida}</span>
+      <span>⚔️ ${dados.ataque}</span>
+      <span>🛡️ ${dados.defesa}</span>
+      <span>⚡ ${dados.velocidade}</span>
+    </div>
+
+    <div class="detalhes-xp">
+
+      <h3>✨ Experiência</h3>
+
+      ${barraXP(item)}
+
+      <p>
+        Cada treinamento concede
+        <strong>100 XP</strong>.
+      </p>
+
+      ${podeModificar && nivel < 30 ? `
+        <div class="botoes-acoes">
+          <button
+            class="botao-treinar"
+            id="botao-treinar"
+            ${podeTreinar ? "" : "disabled"}
+          >
+            ⚔️ Treinar Carta
+          </button>
+        </div>
+
+        ${restante > 0 ? `
+          <p class="texto-xp">
+            ⏳ Próximo treino em:
+            ${formatarTempo(restante)}
+          </p>
+        ` : ""}
+
+        ${xpCheio ? `
+          <p class="texto-xp">
+            🧬 XP completo!
+            Evolua para continuar treinando.
+          </p>
+        ` : ""}
+      ` : ""}
+    </div>
+
+    ${painelEvolucao(carta, item)}
+
+    <h3>⚔️ Ataques</h3>
+    ${ataques || "<p>Nenhum ataque.</p>"}
+
+    ${passivas ? `
+      <h3>⭐ Passivas</h3>
+      ${passivas}
+    ` : ""}
+  `;
+
+  $("modal").classList.add("aberto");
+
+  const botaoTreinar = $("botao-treinar");
+
+  if (botaoTreinar) {
+    botaoTreinar.addEventListener("click", () => {
+      treinar(id);
+    });
+  }
+
+  const botaoEvoluir = $("botao-evoluir");
+
+  if (botaoEvoluir) {
+    botaoEvoluir.addEventListener("click", () => {
+      evoluir(id);
+    });
+  }
+}
+
+// ==================================================
+// TREINAR
+// ==================================================
+
+async function treinar(id) {
+  if (processando || !podeModificar) {
+    return;
+  }
+
+  processando = true;
+
+  const botao = $("botao-treinar");
+
+  if (botao) {
+    botao.disabled = true;
+    botao.textContent = "Treinando...";
+  }
+
+  try {
+    const resultado = await window.RB.treinarCarta(
+      reino,
+      id
+    );
+
+    await atualizarInventario();
+
+    alert(
+      `⚔️ Treinamento concluído!\n\n` +
+      `+${resultado.recebido} XP\n` +
+      `⭐ Nível atual: ${resultado.nivel}`
+    );
+
+  } catch (erro) {
+    alert("Não foi possível treinar: " + erro.message);
+  } finally {
+    processando = false;
+
+    await atualizarInventario().catch(console.error);
+  }
+}
+
+// ==================================================
+// EVOLUIR
+// ==================================================
+
+async function evoluir(id) {
+  if (processando || !podeModificar) {
+    return;
+  }
+
+  const carta = cartaPorId(id);
+
+  if (!carta) {
+    return;
+  }
+
+  const item = itemPorId(id);
+
+  if (!item) {
+    return;
+  }
+
+  const evolucao = proximaEvolucao(
+    carta,
+    nivelItem(item)
+  );
+
+  if (!evolucao) {
+    alert("Nenhuma evolução disponível.");
+    return;
+  }
+
+  const duplicatas = Number(
+    evolucao.duplicatas ??
+    (Number(evolucao.nivel) === 11 ? 3 : 5)
+  );
+
+  const confirmado = confirm(
+    `🧬 Evoluir ${carta.nome}?\n\n` +
+    `Nova forma: ${evolucao.nome || carta.nome}\n` +
+    `Raridade: ${evolucao.raridade}\n` +
+    `Duplicatas consumidas: ${duplicatas}\n\n` +
+    `A carta principal será mantida.`
+  );
+
+  if (!confirmado) {
+    return;
+  }
+
+  processando = true;
+
+  const botao = $("botao-evoluir");
+
+  if (botao) {
+    botao.disabled = true;
+    botao.textContent = "Evoluindo...";
+  }
+
+  try {
+    const resultado = await window.RB.evoluirCarta(
+      reino,
+      id
+    );
+
+    await atualizarInventario();
+
+    alert(
+      `🧬 EVOLUÇÃO CONCLUÍDA!\n\n` +
+      `👑 ${resultado.nome}\n` +
+      `⭐ Nível ${resultado.nivel}\n` +
+      `🎴 Cópias restantes: ${resultado.quantidade}`
+    );
+
+  } catch (erro) {
+    alert("Não foi possível evoluir: " + erro.message);
+  } finally {
+    processando = false;
+
+    await atualizarInventario().catch(console.error);
+  }
+}
+
+// ==================================================
+// FECHAR MODAL
+// ==================================================
+
+function fechar() {
+  $("modal").classList.remove("aberto");
+  cartaAberta = null;
+}
+
+// ==================================================
+// INICIAR
+// ==================================================
+
 mostrar();
 
-window.abrir=abrir;
-window.fechar=fechar;
+// Atualiza o tempo do treinamento quando
+// o jogador mantém o modal aberto.
+
+setInterval(() => {
+  if (
+    cartaAberta !== null &&
+    !processando &&
+    $("modal").classList.contains("aberto")
+  ) {
+    abrir(cartaAberta);
+  }
+}, 30000);
+
+window.abrir = abrir;
+window.fechar = fechar;
 
 </script>
+
 </body>
 </html>
