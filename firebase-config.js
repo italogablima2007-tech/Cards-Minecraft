@@ -1,7 +1,31 @@
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, doc, getDoc, getDocs, collection, setDoc, deleteDoc, runTransaction, onSnapshot, addDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  setDoc,
+  deleteDoc,
+  runTransaction,
+  onSnapshot,
+  addDoc,
+  query,
+  where,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+// ==================================================
+// CONFIGURAÇÃO DO FIREBASE
+// ==================================================
 
 const app = initializeApp({
   apiKey: 'AIzaSyCgR1FUw7gaQKTs0Tea0GAymsK97cHpBrM',
@@ -15,16 +39,10 @@ const app = initializeApp({
 
 const auth = getAuth(app);
 const db = getFirestore(app);
+
 const ADMIN_UID = 'PnQ1N44V4ETTG6koXcW8JZpmh3P2';
 
 const reinos = ['Drakmor', 'Solaris', 'Aetheryon'];
-
-const authReady = new Promise(resolve => {
-  const unsubscribe = onAuthStateChanged(auth, u => {
-    unsubscribe();
-    resolve(u);
-  });
-});
 
 const CONTAS_REINO = {
   Drakmor: {
@@ -41,82 +59,109 @@ const CONTAS_REINO = {
   }
 };
 
+// ==================================================
+// LOGIN
+// ==================================================
+
+const authReady = new Promise(resolve => {
+  const unsubscribe = onAuthStateChanged(auth, usuario => {
+    unsubscribe();
+    resolve(usuario);
+  });
+});
+
 async function perfil() {
   await authReady;
 
-  const u = auth.currentUser;
-  if (!u) return null;
+  const usuario = auth.currentUser;
 
-  if (u.uid === ADMIN_UID) {
-    return { uid: u.uid, reino: 'Admin', admin: true };
+  if (!usuario) return null;
+
+  if (usuario.uid === ADMIN_UID) {
+    return {
+      uid: usuario.uid,
+      reino: 'Admin',
+      admin: true
+    };
   }
 
   const reino = Object.keys(CONTAS_REINO).find(
-    r => CONTAS_REINO[r].uid === u.uid
+    nome => CONTAS_REINO[nome].uid === usuario.uid
   );
 
   return reino
-    ? { uid: u.uid, reino, admin: false }
+    ? { uid: usuario.uid, reino, admin: false }
     : null;
 }
 
 async function exigir() {
-  let x;
+  let usuario;
 
   try {
-    x = await perfil();
-  } catch (e) {
-    alert('Não foi possível verificar o login: ' + e.message);
+    usuario = await perfil();
+  } catch (erro) {
+    alert('Erro ao verificar login: ' + erro.message);
     location.replace('index.html');
-    throw e;
+    throw erro;
   }
 
-  if (!x) {
+  if (!usuario) {
     location.replace('index.html');
     throw Error('Login não autorizado');
   }
 
-  localStorage.setItem('usuarioLogado', x.reino);
-  return x;
+  localStorage.setItem('usuarioLogado', usuario.reino);
+
+  return usuario;
 }
 
 async function entrarReino(reino, codigo) {
-  if (!CONTAS_REINO[reino]) throw Error('Reino inválido');
-  if (!codigo) throw Error('Digite o código secreto');
+  if (!CONTAS_REINO[reino]) {
+    throw Error('Reino inválido');
+  }
+
+  if (!codigo) {
+    throw Error('Digite o código secreto');
+  }
 
   await authReady;
 
-  const cred = await signInWithEmailAndPassword(
+  const credencial = await signInWithEmailAndPassword(
     auth,
     CONTAS_REINO[reino].email,
     codigo
   );
 
-  if (cred.user.uid !== CONTAS_REINO[reino].uid) {
+  if (credencial.user.uid !== CONTAS_REINO[reino].uid) {
     await signOut(auth);
     throw Error('Esta conta não corresponde ao reino escolhido');
   }
 
   localStorage.setItem('usuarioLogado', reino);
   localStorage.removeItem('reinoVisitante');
+
   location.href = 'painel.html';
 }
 
 async function entrar(email, senha, escolha) {
   await authReady;
 
-  const cred = await signInWithEmailAndPassword(
+  const credencial = await signInWithEmailAndPassword(
     auth,
     email,
     senha
   );
 
-  if (escolha !== 'Admin' || cred.user.uid !== ADMIN_UID) {
+  if (
+    escolha !== 'Admin' ||
+    credencial.user.uid !== ADMIN_UID
+  ) {
     await signOut(auth);
     throw Error('Esta conta não tem permissão de administrador');
   }
 
   localStorage.setItem('usuarioLogado', 'Admin');
+
   location.href = 'painel.html';
 }
 
@@ -135,18 +180,33 @@ async function sair() {
 // ==================================================
 
 async function listarCartas() {
-  const snap = await getDocs(collection(db, 'cartas'));
+  const resultado = await getDocs(collection(db, 'cartas'));
 
-  return snap.docs
-    .map(d => d.data())
+  return resultado.docs
+    .map(documento => documento.data())
     .sort((a, b) => Number(a.id) - Number(b.id));
 }
 
-async function salvarCarta(c) {
-  await setDoc(doc(db, 'cartas', String(c.id)), c);
+async function salvarCarta(carta) {
+  const usuario = await perfil();
+
+  if (!usuario?.admin) {
+    throw Error('Apenas o Admin pode cadastrar cartas');
+  }
+
+  await setDoc(
+    doc(db, 'cartas', String(carta.id)),
+    carta
+  );
 }
 
 async function apagarCarta(id) {
+  const usuario = await perfil();
+
+  if (!usuario?.admin) {
+    throw Error('Apenas o Admin pode excluir cartas');
+  }
+
   await deleteDoc(doc(db, 'cartas', String(id)));
 }
 
@@ -155,42 +215,48 @@ async function apagarCarta(id) {
 // ==================================================
 
 async function inventario(reino) {
-  const s = await getDoc(doc(db, 'inventarios', reino));
+  const resultado = await getDoc(
+    doc(db, 'inventarios', reino)
+  );
 
-  return s.exists()
-    ? (s.data().cartas || [])
+  return resultado.exists()
+    ? resultado.data().cartas || []
     : [];
 }
 
 async function adicionarCartas(reino, ids) {
-  await runTransaction(db, async tx => {
-    const ref = doc(db, 'inventarios', reino);
-    const s = await tx.get(ref);
+  await runTransaction(db, async transacao => {
+    const referencia = doc(db, 'inventarios', reino);
+    const resultado = await transacao.get(referencia);
 
-    const lista = s.exists()
-      ? [...(s.data().cartas || [])]
+    const lista = resultado.exists()
+      ? (resultado.data().cartas || []).map(item => ({ ...item }))
       : [];
 
     for (const id of ids) {
-      const it = lista.find(
-        x => String(x.idCarta) === String(id)
+      const item = lista.find(
+        carta => String(carta.idCarta) === String(id)
       );
 
-      if (it) {
-        it.quantidade = Number(it.quantidade || 0) + 1;
+      if (item) {
+        item.quantidade = Number(item.quantidade || 0) + 1;
       } else {
         lista.push({
           idCarta: id,
           quantidade: 1,
-          nivel: 1,
+          nivel: 0,
           xp: 0
         });
       }
     }
 
-    tx.set(ref, { cartas: lista });
+    transacao.set(referencia, { cartas: lista });
   });
 }
+
+// ==================================================
+// IMPORTAR CARTAS ANTIGAS
+// ==================================================
 
 async function importarCartas() {
   const dados = JSON.parse(
@@ -202,18 +268,21 @@ async function importarCartas() {
   }
 
   const atuais = await listarCartas();
-  const existentes = new Set(atuais.map(x => String(x.id)));
 
-  let n = 0;
+  const existentes = new Set(
+    atuais.map(carta => String(carta.id))
+  );
 
-  for (const c of dados) {
-    if (!existentes.has(String(c.id))) {
-      await salvarCarta(c);
-      n++;
+  let quantidade = 0;
+
+  for (const carta of dados) {
+    if (!existentes.has(String(carta.id))) {
+      await salvarCarta(carta);
+      quantidade++;
     }
   }
 
-  return n;
+  return quantidade;
 }
 
 // ==================================================
@@ -221,24 +290,26 @@ async function importarCartas() {
 // ==================================================
 
 async function criarPacoteAdmin(nome, quantidade, destinatarios) {
-  const x = await perfil();
+  const usuario = await perfil();
 
-  if (!x?.admin) {
+  if (!usuario?.admin) {
     throw Error('Apenas o Admin pode criar pacotes');
   }
 
-  const n = Number(quantidade);
+  const numero = Number(quantidade);
 
-  if (!Number.isInteger(n) || n < 1 || n > 30) {
+  if (
+    !Number.isInteger(numero) ||
+    numero < 1 ||
+    numero > 30
+  ) {
     throw Error('Quantidade deve ser entre 1 e 30');
   }
-
-  const reinosValidos = ['Drakmor', 'Solaris', 'Aetheryon'];
 
   if (
     !Array.isArray(destinatarios) ||
     !destinatarios.length ||
-    destinatarios.some(r => !reinosValidos.includes(r))
+    destinatarios.some(reino => !reinos.includes(reino))
   ) {
     throw Error('Destino inválido');
   }
@@ -253,57 +324,69 @@ async function criarPacoteAdmin(nome, quantidade, destinatarios) {
 
   for (const reino of [...new Set(destinatarios)]) {
     const ids = Array.from(
-      { length: n },
+      { length: numero },
       () => cartas[Math.floor(Math.random() * cartas.length)].id
     );
 
-    const ref = await addDoc(collection(db, 'pacotesEnviados'), {
-      nome: String(nome || 'Presente do Admin').slice(0, 70),
-      destinatario: reino,
-      cartas: ids,
-      status: 'pendente',
-      criadoEm: Date.now()
-    });
+    const referencia = await addDoc(
+      collection(db, 'pacotesEnviados'),
+      {
+        nome: String(nome || 'Presente do Admin').slice(0, 70),
+        destinatario: reino,
+        cartas: ids,
+        status: 'pendente',
+        criadoEm: Date.now()
+      }
+    );
 
-    entregas.push(ref.id);
+    entregas.push(referencia.id);
   }
 
   return entregas;
 }
 
 async function listarPacotesRecebidos(reino) {
-  const x = await perfil();
+  const usuario = await perfil();
 
-  if (!x || (x.reino !== reino && !x.admin)) {
+  if (
+    !usuario ||
+    (usuario.reino !== reino && !usuario.admin)
+  ) {
     throw Error('Sem permissão');
   }
 
-  const q = query(
+  const consulta = query(
     collection(db, 'pacotesEnviados'),
     where('destinatario', '==', reino)
   );
 
-  const s = await getDocs(q);
+  const resultado = await getDocs(consulta);
 
-  return s.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.status === 'pendente')
+  return resultado.docs
+    .map(documento => ({
+      id: documento.id,
+      ...documento.data()
+    }))
+    .filter(pacote => pacote.status === 'pendente')
     .sort((a, b) => a.criadoEm - b.criadoEm);
 }
 
 async function resgatarPacote(id, reino) {
-  const x = await perfil();
+  const usuario = await perfil();
 
-  if (!x || (x.reino !== reino && !x.admin)) {
+  if (
+    !usuario ||
+    (usuario.reino !== reino && !usuario.admin)
+  ) {
     throw Error('Sem permissão');
   }
 
-  return runTransaction(db, async tx => {
-    const ref = doc(db, 'pacotesEnviados', id);
-    const invRef = doc(db, 'inventarios', reino);
+  return runTransaction(db, async transacao => {
+    const referencia = doc(db, 'pacotesEnviados', id);
+    const referenciaInventario = doc(db, 'inventarios', reino);
 
-    const pacote = await tx.get(ref);
-    const inv = await tx.get(invRef);
+    const pacote = await transacao.get(referencia);
+    const inventarioAtual = await transacao.get(referenciaInventario);
 
     if (!pacote.exists()) {
       throw Error('Pacote não encontrado');
@@ -311,33 +394,39 @@ async function resgatarPacote(id, reino) {
 
     const dados = pacote.data();
 
-    if (dados.destinatario !== reino || dados.status !== 'pendente') {
+    if (
+      dados.destinatario !== reino ||
+      dados.status !== 'pendente'
+    ) {
       throw Error('Pacote já resgatado ou inválido');
     }
 
-    const lista = inv.exists()
-      ? [...(inv.data().cartas || [])]
+    const lista = inventarioAtual.exists()
+      ? (inventarioAtual.data().cartas || []).map(item => ({ ...item }))
       : [];
 
-    for (const cartaId of dados.cartas) {
-      const it = lista.find(
-        z => String(z.idCarta) === String(cartaId)
+    for (const idCarta of dados.cartas) {
+      const item = lista.find(
+        carta => String(carta.idCarta) === String(idCarta)
       );
 
-      if (it) {
-        it.quantidade = Number(it.quantidade || 0) + 1;
+      if (item) {
+        item.quantidade = Number(item.quantidade || 0) + 1;
       } else {
         lista.push({
-          idCarta: cartaId,
+          idCarta,
           quantidade: 1,
-          nivel: 1,
+          nivel: 0,
           xp: 0
         });
       }
     }
 
-    tx.set(invRef, { cartas: lista });
-    tx.update(ref, { status: 'resgatado' });
+    transacao.set(referenciaInventario, { cartas: lista });
+
+    transacao.update(referencia, {
+      status: 'resgatado'
+    });
 
     return dados.cartas;
   });
@@ -365,28 +454,25 @@ function normalizarRaridade(valor) {
     .trim();
 }
 
-// Sorteia 3 cartas, respeitando as raridades.
-// Cartas repetidas são permitidas.
-
 function sortearCartasDiarias(cartas, quantidade = 3) {
   const grupos = new Map(
-    CHANCES_DIARIAS.map(([r]) => [r, []])
+    CHANCES_DIARIAS.map(([raridade]) => [raridade, []])
   );
 
   for (const carta of cartas) {
-    const r = normalizarRaridade(carta.raridade);
+    const raridade = normalizarRaridade(carta.raridade);
 
     if (
-      grupos.has(r) &&
+      grupos.has(raridade) &&
       carta.id !== undefined &&
       carta.id !== null
     ) {
-      grupos.get(r).push(carta);
+      grupos.get(raridade).push(carta);
     }
   }
 
   const disponiveis = CHANCES_DIARIAS.filter(
-    ([r]) => grupos.get(r).length
+    ([raridade]) => grupos.get(raridade).length
   );
 
   if (!disponiveis.length) {
@@ -395,65 +481,75 @@ function sortearCartasDiarias(cartas, quantidade = 3) {
     );
   }
 
-  const totalPeso = disponiveis.reduce(
-    (s, [, peso]) => s + peso,
+  const pesoTotal = disponiveis.reduce(
+    (total, [, peso]) => total + peso,
     0
   );
 
   return Array.from({ length: quantidade }, () => {
-    let sorteio = Math.random() * totalPeso;
-    let grupo = disponiveis[disponiveis.length - 1][0];
+    let sorteio = Math.random() * pesoTotal;
+
+    let raridadeEscolhida = disponiveis[
+      disponiveis.length - 1
+    ][0];
 
     for (const [raridade, peso] of disponiveis) {
       sorteio -= peso;
 
       if (sorteio < 0) {
-        grupo = raridade;
+        raridadeEscolhida = raridade;
         break;
       }
     }
 
-    const pool = grupos.get(grupo);
+    const grupo = grupos.get(raridadeEscolhida);
 
-    return pool[
-      Math.floor(Math.random() * pool.length)
+    return grupo[
+      Math.floor(Math.random() * grupo.length)
     ].id;
   });
 }
 
-// Consulta quando o reino poderá abrir novamente.
-
 async function estadoPacoteDiario(reino) {
-  const x = await perfil();
+  const usuario = await perfil();
 
-  if (!x || x.admin || x.reino !== reino) {
+  if (
+    !usuario ||
+    usuario.admin ||
+    usuario.reino !== reino
+  ) {
     throw Error(
       'Entre com a conta do reino para abrir o pacote diário.'
     );
   }
 
-  const snap = await getDoc(
+  const resultado = await getDoc(
     doc(db, 'pacotesDiarios', reino)
   );
 
-  const ms =
-    snap.exists() && snap.data().abertoEm?.toMillis
-      ? snap.data().abertoEm.toMillis()
-      : 0;
+  const horario = (
+    resultado.exists() &&
+    resultado.data().abertoEm?.toMillis
+  )
+    ? resultado.data().abertoEm.toMillis()
+    : 0;
 
   return {
-    proximoEm: ms ? ms + INTERVALO_DIARIO_MS : 0,
+    proximoEm: horario
+      ? horario + INTERVALO_DIARIO_MS
+      : 0,
     agora: Date.now()
   };
 }
 
-// Abre o pacote e salva as três cartas e o horário
-// na mesma transação do Firebase.
-
 async function abrirPacoteDiario(reino) {
-  const x = await perfil();
+  const usuario = await perfil();
 
-  if (!x || x.admin || x.reino !== reino) {
+  if (
+    !usuario ||
+    usuario.admin ||
+    usuario.reino !== reino
+  ) {
     throw Error(
       'Somente a conta do próprio reino pode abrir o pacote diário.'
     );
@@ -462,37 +558,40 @@ async function abrirPacoteDiario(reino) {
   const catalogo = await listarCartas();
   const ids = sortearCartasDiarias(catalogo, 3);
 
-  const ref = doc(db, 'pacotesDiarios', reino);
-  const invRef = doc(db, 'inventarios', reino);
+  const referenciaDiario = doc(db, 'pacotesDiarios', reino);
+  const referenciaInventario = doc(db, 'inventarios', reino);
 
-  await runTransaction(db, async tx => {
-    const diario = await tx.get(ref);
-    const inventarioAtual = await tx.get(invRef);
+  await runTransaction(db, async transacao => {
+    const diario = await transacao.get(referenciaDiario);
+    const inventarioAtual = await transacao.get(referenciaInventario);
 
-    const ultimo =
-      diario.exists() && diario.data().abertoEm?.toMillis
-        ? diario.data().abertoEm.toMillis()
-        : 0;
+    const ultimo = (
+      diario.exists() &&
+      diario.data().abertoEm?.toMillis
+    )
+      ? diario.data().abertoEm.toMillis()
+      : 0;
 
     if (
       ultimo &&
       Date.now() < ultimo + INTERVALO_DIARIO_MS
     ) {
-      const e = Error(
+      const erro = Error(
         'Pacote indisponível: aguarde a próxima abertura.'
       );
 
-      e.proximoEm = ultimo + INTERVALO_DIARIO_MS;
-      throw e;
+      erro.proximoEm = ultimo + INTERVALO_DIARIO_MS;
+
+      throw erro;
     }
 
     const lista = inventarioAtual.exists()
-      ? (inventarioAtual.data().cartas || []).map(c => ({ ...c }))
+      ? (inventarioAtual.data().cartas || []).map(item => ({ ...item }))
       : [];
 
     for (const id of ids) {
       const item = lista.find(
-        c => String(c.idCarta) === String(id)
+        carta => String(carta.idCarta) === String(id)
       );
 
       if (item) {
@@ -501,7 +600,7 @@ async function abrirPacoteDiario(reino) {
         lista.push({
           idCarta: id,
           quantidade: 1,
-          nivel: 1,
+          nivel: 0,
           xp: 0
         });
       }
@@ -513,9 +612,11 @@ async function abrirPacoteDiario(reino) {
       );
     }
 
-    tx.set(invRef, { cartas: lista });
+    transacao.set(referenciaInventario, {
+      cartas: lista
+    });
 
-    tx.set(ref, {
+    transacao.set(referenciaDiario, {
       abertoEm: serverTimestamp()
     });
   });
@@ -524,7 +625,329 @@ async function abrirPacoteDiario(reino) {
 }
 
 // ==================================================
-// DISPONIBILIZAR FUNÇÕES PARA AS PÁGINAS
+// SISTEMA DE XP E EVOLUÇÃO
+// ==================================================
+
+const NIVEL_MAXIMO = 30;
+
+const INTERVALO_TREINO_MS = 4 * 60 * 60 * 1000;
+
+const XP_TREINO = 100;
+
+// XP necessário para passar ao próximo nível.
+
+function xpNecessario(nivel) {
+  const numero = Math.max(
+    0,
+    Math.min(NIVEL_MAXIMO, Math.floor(Number(nivel) || 0))
+  );
+
+  if (numero >= NIVEL_MAXIMO) {
+    return 0;
+  }
+
+  return 100 + numero * 25;
+}
+
+// Procura a evolução cadastrada pelo Admin.
+
+function etapaEvolucao(carta, nivel) {
+  const evolucoes = Array.isArray(carta?.evolucoes)
+    ? carta.evolucoes
+    : [];
+
+  return evolucoes.find(
+    evolucao => Number(evolucao.nivel) === Number(nivel)
+  ) || null;
+}
+
+// Calcula os atributos da carta conforme o nível.
+
+function atributosCarta(carta, item) {
+  const nivel = Math.max(
+    0,
+    Math.min(NIVEL_MAXIMO, Number(item?.nivel ?? 0))
+  );
+
+  const primeira = etapaEvolucao(carta, 11);
+  const segunda = etapaEvolucao(carta, 21);
+
+  const forma = nivel >= 21
+    ? (segunda || primeira)
+    : nivel >= 11
+      ? primeira
+      : null;
+
+  const bonus = forma?.bonus || {};
+
+  const fator = 1 + nivel * 0.015;
+
+  const atributo = nome => {
+    const valorBase = Number(carta?.[nome]) || 0;
+    const valorBonus = Number(bonus[nome]) || 0;
+
+    return Math.round(valorBase * fator + valorBonus);
+  };
+
+  return {
+    nivel,
+    nome: forma?.nome || carta.nome,
+    imagem: forma?.imagem || carta.imagem,
+    fundo: forma?.fundo || carta.fundo,
+    raridade: forma?.raridade || carta.raridade,
+    vida: atributo('vida'),
+    ataque: atributo('ataque'),
+    defesa: atributo('defesa'),
+    velocidade: atributo('velocidade')
+  };
+}
+
+// Confere se o usuário pertence ao reino.
+
+function validarReinoDaCarta(usuario, reino) {
+  if (
+    !usuario ||
+    usuario.admin ||
+    usuario.reino !== reino
+  ) {
+    throw Error(
+      'Entre com a conta do próprio reino para treinar ou evoluir.'
+    );
+  }
+}
+
+// ==================================================
+// TREINAMENTO
+// ==================================================
+// 100 XP por treino.
+// Intervalo de 4 horas por tipo de carta.
+// Nível máximo: 30.
+
+async function treinarCarta(reino, idCarta) {
+  validarReinoDaCarta(await perfil(), reino);
+
+  const referenciaInventario = doc(db, 'inventarios', reino);
+  const referenciaCarta = doc(db, 'cartas', String(idCarta));
+
+  return runTransaction(db, async transacao => {
+    const inventarioAtual = await transacao.get(
+      referenciaInventario
+    );
+
+    const registroCarta = await transacao.get(
+      referenciaCarta
+    );
+
+    if (!registroCarta.exists()) {
+      throw Error('Carta não encontrada no catálogo.');
+    }
+
+    const carta = registroCarta.data();
+
+    const lista = inventarioAtual.exists()
+      ? (inventarioAtual.data().cartas || []).map(item => ({ ...item }))
+      : [];
+
+    const item = lista.find(
+      cartaInventario =>
+        String(cartaInventario.idCarta) === String(idCarta)
+    );
+
+    if (!item || Number(item.quantidade || 0) < 1) {
+      throw Error('Você não possui esta carta.');
+    }
+
+    let nivel = Math.max(
+      0,
+      Math.min(30, Number(item.nivel ?? 0))
+    );
+
+    let xp = Math.max(0, Number(item.xp) || 0);
+
+    if (nivel >= NIVEL_MAXIMO) {
+      throw Error('Esta carta já está no nível máximo.');
+    }
+
+    const bloqueado = (
+      nivel === 10 && etapaEvolucao(carta, 11)
+    ) || (
+      nivel === 20 && etapaEvolucao(carta, 21)
+    );
+
+    if (bloqueado && xp >= xpNecessario(nivel)) {
+      throw Error(
+        'XP completo. Evolua esta carta para continuar treinando.'
+      );
+    }
+
+    const agora = Date.now();
+    const ultimoTreino = Number(item.ultimoTreino || 0);
+
+    if (
+      ultimoTreino &&
+      agora < ultimoTreino + INTERVALO_TREINO_MS
+    ) {
+      throw Error(
+        'Treino indisponível. Aguarde 4 horas desde o último treino.'
+      );
+    }
+
+    xp += XP_TREINO;
+
+    while (
+      nivel < NIVEL_MAXIMO &&
+      xp >= xpNecessario(nivel)
+    ) {
+      const exigeEvolucao = (
+        nivel === 10 && etapaEvolucao(carta, 11)
+      ) || (
+        nivel === 20 && etapaEvolucao(carta, 21)
+      );
+
+      if (exigeEvolucao) {
+        xp = xpNecessario(nivel);
+        break;
+      }
+
+      xp -= xpNecessario(nivel);
+      nivel++;
+
+      const chegouNaEvolucao = (
+        nivel === 10 && etapaEvolucao(carta, 11)
+      ) || (
+        nivel === 20 && etapaEvolucao(carta, 21)
+      );
+
+      if (chegouNaEvolucao) {
+        xp = Math.min(xp, xpNecessario(nivel));
+        break;
+      }
+    }
+
+    item.nivel = nivel;
+    item.xp = nivel >= NIVEL_MAXIMO ? 0 : xp;
+    item.ultimoTreino = agora;
+
+    transacao.set(referenciaInventario, {
+      cartas: lista
+    });
+
+    return {
+      nivel: item.nivel,
+      xp: item.xp,
+      recebido: XP_TREINO
+    };
+  });
+}
+
+// ==================================================
+// EVOLUIR CARTA
+// ==================================================
+// Nível 10 -> 11: padrão 3 duplicatas.
+// Nível 20 -> 21: padrão 5 duplicatas.
+// O Admin poderá alterar esses valores em cada carta.
+
+async function evoluirCarta(reino, idCarta) {
+  validarReinoDaCarta(await perfil(), reino);
+
+  const referenciaInventario = doc(db, 'inventarios', reino);
+  const referenciaCarta = doc(db, 'cartas', String(idCarta));
+
+  return runTransaction(db, async transacao => {
+    const inventarioAtual = await transacao.get(
+      referenciaInventario
+    );
+
+    const registroCarta = await transacao.get(
+      referenciaCarta
+    );
+
+    if (!registroCarta.exists()) {
+      throw Error('Carta não encontrada no catálogo.');
+    }
+
+    const carta = registroCarta.data();
+
+    const lista = inventarioAtual.exists()
+      ? (inventarioAtual.data().cartas || []).map(item => ({ ...item }))
+      : [];
+
+    const item = lista.find(
+      cartaInventario =>
+        String(cartaInventario.idCarta) === String(idCarta)
+    );
+
+    if (!item) {
+      throw Error('Carta não encontrada no inventário.');
+    }
+
+    const nivel = Number(item.nivel ?? 0);
+
+    if (nivel !== 10 && nivel !== 20) {
+      throw Error(
+        'A evolução exige que a carta esteja no nível 10 ou 20.'
+      );
+    }
+
+    const proximoNivel = nivel + 1;
+
+    const evolucao = etapaEvolucao(carta, proximoNivel);
+
+    if (!evolucao) {
+      throw Error(
+        'O Admin ainda não cadastrou essa evolução.'
+      );
+    }
+
+    const padraoDuplicatas = proximoNivel === 11 ? 3 : 5;
+
+    const duplicatasNecessarias = Math.max(
+      0,
+      Math.floor(
+        Number(evolucao.duplicatas ?? padraoDuplicatas)
+      )
+    );
+
+    const quantidade = Number(item.quantidade || 0);
+
+    if (quantidade < duplicatasNecessarias + 1) {
+      throw Error(
+        `Você precisa de ${duplicatasNecessarias} cópias extras. ` +
+        `Possui ${Math.max(0, quantidade - 1)}.`
+      );
+    }
+
+    const xpExigido = xpNecessario(nivel);
+
+    if (Number(item.xp || 0) < xpExigido) {
+      throw Error(
+        `Faltam ${xpExigido - Number(item.xp || 0)} XP para evoluir.`
+      );
+    }
+
+    // Consome apenas as duplicatas.
+    // A carta principal permanece no inventário.
+
+    item.quantidade = quantidade - duplicatasNecessarias;
+
+    item.xp = Number(item.xp || 0) - xpExigido;
+
+    item.nivel = proximoNivel;
+
+    transacao.set(referenciaInventario, {
+      cartas: lista
+    });
+
+    return {
+      nivel: proximoNivel,
+      quantidade: item.quantidade,
+      nome: evolucao.nome || carta.nome
+    };
+  });
+}
+
+// ==================================================
+// DISPONIBILIZAR FUNÇÕES PARA O SITE
 // ==================================================
 
 window.RB = {
@@ -537,17 +960,31 @@ window.RB = {
   entrar,
   entrarReino,
   sair,
+
+  // Cartas
   listarCartas,
   salvarCarta,
   apagarCarta,
+
+  // Inventário
   inventario,
   adicionarCartas,
   importarCartas,
+
+  // Pacotes
   criarPacoteAdmin,
   listarPacotesRecebidos,
   resgatarPacote,
   estadoPacoteDiario,
   abrirPacoteDiario,
+
+  // XP e evolução
+  xpNecessario,
+  atributosCarta,
+  treinarCarta,
+  evoluirCarta,
+
+  // Firebase
   doc,
   getDoc,
   setDoc,
