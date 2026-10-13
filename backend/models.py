@@ -20,3 +20,30 @@ class Jogador(Base):
         DateTime(timezone=True),
         server_default=func.now()
     )
+
+# ==================================================
+# CARTAS DO JOGO
+# ==================================================
+
+class Carta(Base):
+    __tablename__ = "cartas"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    nome = Column(String(100), nullable=False)
+
+    raridade = Column(String(30), nullable=False)
+
+    classe = Column(String(50), nullable=True)
+
+    reino = Column(String(50), nullable=True)
+
+    ataque = Column(Integer, default=0)
+
+    defesa = Column(Integer, default=0)
+
+    velocidade = Column(Integer, default=0)
+
+    vida = Column(Integer, default=0)
+
+    imagem = Column(String(1000), nullable=True)
