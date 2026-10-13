@@ -1,11 +1,12 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 
 import {
   getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 import {
   getFirestore,
@@ -21,41 +22,41 @@ import {
   query,
   where,
   serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ==================================================
 // CONFIGURAÇÃO DO FIREBASE
 // ==================================================
 
 const app = initializeApp({
-  apiKey: 'AIzaSyCgR1FUw7gaQKTs0Tea0GAymsK97cHpBrM',
-  authDomain: 'reinos-e-batalhas.firebaseapp.com',
-  projectId: 'reinos-e-batalhas',
-  storageBucket: 'reinos-e-batalhas.firebasestorage.app',
-  messagingSenderId: '39778437620',
-  appId: '1:39778437620:web:9e4c7690d42ccaa204d1a1',
-  measurementId: 'G-7P807DPL45'
+  apiKey: "AIzaSyCgR1FUw7gaQKTs0Tea0GAymsK97cHpBrM",
+  authDomain: "reinos-e-batalhas.firebaseapp.com",
+  projectId: "reinos-e-batalhas",
+  storageBucket: "reinos-e-batalhas.firebasestorage.app",
+  messagingSenderId: "39778437620",
+  appId: "1:39778437620:web:9e4c7690d42ccaa204d1a1",
+  measurementId: "G-7P807DPL45"
 });
 
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const ADMIN_UID = 'PnQ1N44V4ETTG6koXcW8JZpmh3P2';
+const ADMIN_UID = "PnQ1N44V4ETTG6koXcW8JZpmh3P2";
 
-const reinos = ['Drakmor', 'Solaris', 'Aetheryon'];
+const reinos = ["Drakmor", "Solaris", "Aetheryon"];
 
 const CONTAS_REINO = {
   Drakmor: {
-    email: 'italopaodeforma@gmail.com',
-    uid: 'o4TMyQzGeqT5XEclTRK5rA8tDOF2'
+    email: "italopaodeforma@gmail.com",
+    uid: "o4TMyQzGeqT5XEclTRK5rA8tDOF2"
   },
   Solaris: {
-    email: 'maycomventurim@gmail.com',
-    uid: 'uwdUM1mMYEcMBKhC6XpNLrszAeI2'
+    email: "maycomventurim@gmail.com",
+    uid: "uwdUM1mMYEcMBKhC6XpNLrszAeI2"
   },
   Aetheryon: {
-    email: 'lavinya.sloiola@gmail.com',
-    uid: 'GMJajxBKyoZkJGDKfCcHzLmwrGl2'
+    email: "lavinya.sloiola@gmail.com",
+    uid: "GMJajxBKyoZkJGDKfCcHzLmwrGl2"
   }
 };
 
@@ -74,13 +75,12 @@ async function perfil() {
   await authReady;
 
   const usuario = auth.currentUser;
-
   if (!usuario) return null;
 
   if (usuario.uid === ADMIN_UID) {
     return {
       uid: usuario.uid,
-      reino: 'Admin',
+      reino: "Admin",
       admin: true
     };
   }
@@ -100,28 +100,27 @@ async function exigir() {
   try {
     usuario = await perfil();
   } catch (erro) {
-    alert('Erro ao verificar login: ' + erro.message);
-    location.replace('index.html');
+    alert("Erro ao verificar login: " + erro.message);
+    location.replace("index.html");
     throw erro;
   }
 
   if (!usuario) {
-    location.replace('index.html');
-    throw Error('Login não autorizado');
+    location.replace("index.html");
+    throw Error("Login não autorizado");
   }
 
-  localStorage.setItem('usuarioLogado', usuario.reino);
-
+  localStorage.setItem("usuarioLogado", usuario.reino);
   return usuario;
 }
 
 async function entrarReino(reino, codigo) {
   if (!CONTAS_REINO[reino]) {
-    throw Error('Reino inválido');
+    throw Error("Reino inválido");
   }
 
   if (!codigo) {
-    throw Error('Digite o código secreto');
+    throw Error("Digite o código secreto");
   }
 
   await authReady;
@@ -134,13 +133,13 @@ async function entrarReino(reino, codigo) {
 
   if (credencial.user.uid !== CONTAS_REINO[reino].uid) {
     await signOut(auth);
-    throw Error('Esta conta não corresponde ao reino escolhido');
+    throw Error("Esta conta não corresponde ao reino escolhido");
   }
 
-  localStorage.setItem('usuarioLogado', reino);
-  localStorage.removeItem('reinoVisitante');
+  localStorage.setItem("usuarioLogado", reino);
+  localStorage.removeItem("reinoVisitante");
 
-  location.href = 'painel.html';
+  location.href = "painel.html";
 }
 
 async function entrar(email, senha, escolha) {
@@ -153,26 +152,25 @@ async function entrar(email, senha, escolha) {
   );
 
   if (
-    escolha !== 'Admin' ||
+    escolha !== "Admin" ||
     credencial.user.uid !== ADMIN_UID
   ) {
     await signOut(auth);
-    throw Error('Esta conta não tem permissão de administrador');
+    throw Error("Esta conta não tem permissão de administrador");
   }
 
-  localStorage.setItem('usuarioLogado', 'Admin');
-
-  location.href = 'painel.html';
+  localStorage.setItem("usuarioLogado", "Admin");
+  location.href = "painel.html";
 }
 
 async function sair() {
   await signOut(auth);
 
-  localStorage.removeItem('reinoVisitante');
-  localStorage.removeItem('usuarioLogado');
-  localStorage.removeItem('reinoAdministrado');
+  localStorage.removeItem("reinoVisitante");
+  localStorage.removeItem("usuarioLogado");
+  localStorage.removeItem("reinoAdministrado");
 
-  location.href = 'index.html';
+  location.href = "index.html";
 }
 
 // ==================================================
@@ -180,7 +178,7 @@ async function sair() {
 // ==================================================
 
 async function listarCartas() {
-  const resultado = await getDocs(collection(db, 'cartas'));
+  const resultado = await getDocs(collection(db, "cartas"));
 
   return resultado.docs
     .map(documento => documento.data())
@@ -191,11 +189,11 @@ async function salvarCarta(carta) {
   const usuario = await perfil();
 
   if (!usuario?.admin) {
-    throw Error('Apenas o Admin pode cadastrar cartas');
+    throw Error("Apenas o Admin pode cadastrar cartas");
   }
 
   await setDoc(
-    doc(db, 'cartas', String(carta.id)),
+    doc(db, "cartas", String(carta.id)),
     carta
   );
 }
@@ -204,10 +202,10 @@ async function apagarCarta(id) {
   const usuario = await perfil();
 
   if (!usuario?.admin) {
-    throw Error('Apenas o Admin pode excluir cartas');
+    throw Error("Apenas o Admin pode excluir cartas");
   }
 
-  await deleteDoc(doc(db, 'cartas', String(id)));
+  await deleteDoc(doc(db, "cartas", String(id)));
 }
 
 // ==================================================
@@ -216,7 +214,7 @@ async function apagarCarta(id) {
 
 async function inventario(reino) {
   const resultado = await getDoc(
-    doc(db, 'inventarios', reino)
+    doc(db, "inventarios", reino)
   );
 
   return resultado.exists()
@@ -226,7 +224,7 @@ async function inventario(reino) {
 
 async function adicionarCartas(reino, ids) {
   await runTransaction(db, async transacao => {
-    const referencia = doc(db, 'inventarios', reino);
+    const referencia = doc(db, "inventarios", reino);
     const resultado = await transacao.get(referencia);
 
     const lista = resultado.exists()
@@ -260,11 +258,11 @@ async function adicionarCartas(reino, ids) {
 
 async function importarCartas() {
   const dados = JSON.parse(
-    localStorage.getItem('cartasReinos') || '[]'
+    localStorage.getItem("cartasReinos") || "[]"
   );
 
   if (!Array.isArray(dados) || !dados.length) {
-    throw Error('Nenhuma carta local encontrada neste navegador.');
+    throw Error("Nenhuma carta local encontrada neste navegador.");
   }
 
   const atuais = await listarCartas();
@@ -286,24 +284,17 @@ async function importarCartas() {
 }
 
 // ==================================================
-// PACOTES PERSONALIZADOS DO ADMIN
+// PACOTES DO ADMIN
 // ==================================================
 
-async function criarPacoteAdmin(nome, quantidade, destinatarios) {
+// Mantém compatibilidade com o sistema antigo,
+// que enviava uma quantidade de cartas aleatórias.
+
+async function criarPacoteAdmin(nome, quantidadeOuItens, destinatarios) {
   const usuario = await perfil();
 
   if (!usuario?.admin) {
-    throw Error('Apenas o Admin pode criar pacotes');
-  }
-
-  const numero = Number(quantidade);
-
-  if (
-    !Number.isInteger(numero) ||
-    numero < 1 ||
-    numero > 30
-  ) {
-    throw Error('Quantidade deve ser entre 1 e 30');
+    throw Error("Apenas o Admin pode criar pacotes");
   }
 
   if (
@@ -311,30 +302,102 @@ async function criarPacoteAdmin(nome, quantidade, destinatarios) {
     !destinatarios.length ||
     destinatarios.some(reino => !reinos.includes(reino))
   ) {
-    throw Error('Destino inválido');
+    throw Error("Destinatário inválido");
   }
 
-  const cartas = await listarCartas();
+  const catalogo = await listarCartas();
 
-  if (!cartas.length) {
-    throw Error('Cadastre cartas antes de enviar');
+  if (!catalogo.length) {
+    throw Error("Cadastre cartas antes de enviar");
   }
+
+  const idsValidos = new Map(
+    catalogo.map(carta => [String(carta.id), carta.id])
+  );
 
   const entregas = [];
+
+  // Novo formato: cartas escolhidas manualmente.
+  if (Array.isArray(quantidadeOuItens)) {
+    const ids = [];
+
+    if (!quantidadeOuItens.length) {
+      throw Error("Selecione pelo menos uma carta");
+    }
+
+    for (const item of quantidadeOuItens) {
+      const id = idsValidos.get(String(item.idCarta));
+      const quantidade = Number(item.quantidade);
+
+      if (id === undefined) {
+        throw Error("Uma das cartas não existe no catálogo");
+      }
+
+      if (
+        !Number.isInteger(quantidade) ||
+        quantidade < 1 ||
+        quantidade > 30
+      ) {
+        throw Error("Quantidade inválida para uma carta");
+      }
+
+      for (let i = 0; i < quantidade; i++) {
+        ids.push(id);
+      }
+    }
+
+    if (ids.length > 30) {
+      throw Error("Máximo de 30 cartas por pacote");
+    }
+
+    for (const reino of [...new Set(destinatarios)]) {
+      const referencia = await addDoc(
+        collection(db, "pacotesEnviados"),
+        {
+          nome: String(nome || "Presente do Admin")
+            .trim()
+            .slice(0, 70),
+          destinatario: reino,
+          cartas: ids,
+          status: "pendente",
+          criadoEm: Date.now()
+        }
+      );
+
+      entregas.push(referencia.id);
+    }
+
+    return entregas;
+  }
+
+  // Formato antigo: sorteio de cartas.
+  const numero = Number(quantidadeOuItens);
+
+  if (
+    !Number.isInteger(numero) ||
+    numero < 1 ||
+    numero > 30
+  ) {
+    throw Error("Quantidade deve ser entre 1 e 30");
+  }
 
   for (const reino of [...new Set(destinatarios)]) {
     const ids = Array.from(
       { length: numero },
-      () => cartas[Math.floor(Math.random() * cartas.length)].id
+      () => catalogo[
+        Math.floor(Math.random() * catalogo.length)
+      ].id
     );
 
     const referencia = await addDoc(
-      collection(db, 'pacotesEnviados'),
+      collection(db, "pacotesEnviados"),
       {
-        nome: String(nome || 'Presente do Admin').slice(0, 70),
+        nome: String(nome || "Presente do Admin")
+          .trim()
+          .slice(0, 70),
         destinatario: reino,
         cartas: ids,
-        status: 'pendente',
+        status: "pendente",
         criadoEm: Date.now()
       }
     );
@@ -345,6 +408,26 @@ async function criarPacoteAdmin(nome, quantidade, destinatarios) {
   return entregas;
 }
 
+// Função específica para pacotes personalizados.
+
+async function criarPacotePersonalizado(
+  nome,
+  destinatario,
+  itens
+) {
+  const entregas = await criarPacoteAdmin(
+    nome,
+    itens,
+    [destinatario]
+  );
+
+  return entregas[0];
+}
+
+// ==================================================
+// PACOTES RECEBIDOS
+// ==================================================
+
 async function listarPacotesRecebidos(reino) {
   const usuario = await perfil();
 
@@ -352,12 +435,12 @@ async function listarPacotesRecebidos(reino) {
     !usuario ||
     (usuario.reino !== reino && !usuario.admin)
   ) {
-    throw Error('Sem permissão');
+    throw Error("Sem permissão");
   }
 
   const consulta = query(
-    collection(db, 'pacotesEnviados'),
-    where('destinatario', '==', reino)
+    collection(db, "pacotesEnviados"),
+    where("destinatario", "==", reino)
   );
 
   const resultado = await getDocs(consulta);
@@ -367,7 +450,7 @@ async function listarPacotesRecebidos(reino) {
       id: documento.id,
       ...documento.data()
     }))
-    .filter(pacote => pacote.status === 'pendente')
+    .filter(pacote => pacote.status === "pendente")
     .sort((a, b) => a.criadoEm - b.criadoEm);
 }
 
@@ -378,27 +461,31 @@ async function resgatarPacote(id, reino) {
     !usuario ||
     (usuario.reino !== reino && !usuario.admin)
   ) {
-    throw Error('Sem permissão');
+    throw Error("Sem permissão");
   }
 
   return runTransaction(db, async transacao => {
-    const referencia = doc(db, 'pacotesEnviados', id);
-    const referenciaInventario = doc(db, 'inventarios', reino);
+    const referencia = doc(db, "pacotesEnviados", id);
+    const referenciaInventario = doc(db, "inventarios", reino);
 
     const pacote = await transacao.get(referencia);
     const inventarioAtual = await transacao.get(referenciaInventario);
 
     if (!pacote.exists()) {
-      throw Error('Pacote não encontrado');
+      throw Error("Pacote não encontrado");
     }
 
     const dados = pacote.data();
 
     if (
       dados.destinatario !== reino ||
-      dados.status !== 'pendente'
+      dados.status !== "pendente"
     ) {
-      throw Error('Pacote já resgatado ou inválido');
+      throw Error("Pacote já resgatado ou inválido");
+    }
+
+    if (!Array.isArray(dados.cartas)) {
+      throw Error("Pacote inválido");
     }
 
     const lista = inventarioAtual.exists()
@@ -422,10 +509,12 @@ async function resgatarPacote(id, reino) {
       }
     }
 
-    transacao.set(referenciaInventario, { cartas: lista });
+    transacao.set(referenciaInventario, {
+      cartas: lista
+    });
 
     transacao.update(referencia, {
-      status: 'resgatado'
+      status: "resgatado"
     });
 
     return dados.cartas;
@@ -439,17 +528,17 @@ async function resgatarPacote(id, reino) {
 const INTERVALO_DIARIO_MS = 24 * 60 * 60 * 1000;
 
 const CHANCES_DIARIAS = [
-  ['comum', 60],
-  ['rara', 25],
-  ['epica', 10],
-  ['lendaria', 4],
-  ['mitica', 1]
+  ["comum", 60],
+  ["rara", 25],
+  ["epica", 10],
+  ["lendaria", 4],
+  ["mitica", 1]
 ];
 
 function normalizarRaridade(valor) {
-  return String(valor || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
 }
@@ -477,7 +566,7 @@ function sortearCartasDiarias(cartas, quantidade = 3) {
 
   if (!disponiveis.length) {
     throw Error(
-      'Nenhuma carta com raridade válida cadastrada no catálogo.'
+      "Nenhuma carta com raridade válida cadastrada no catálogo."
     );
   }
 
@@ -519,12 +608,12 @@ async function estadoPacoteDiario(reino) {
     usuario.reino !== reino
   ) {
     throw Error(
-      'Entre com a conta do reino para abrir o pacote diário.'
+      "Entre com a conta do reino para abrir o pacote diário."
     );
   }
 
   const resultado = await getDoc(
-    doc(db, 'pacotesDiarios', reino)
+    doc(db, "pacotesDiarios", reino)
   );
 
   const horario = (
@@ -551,15 +640,15 @@ async function abrirPacoteDiario(reino) {
     usuario.reino !== reino
   ) {
     throw Error(
-      'Somente a conta do próprio reino pode abrir o pacote diário.'
+      "Somente a conta do próprio reino pode abrir o pacote diário."
     );
   }
 
   const catalogo = await listarCartas();
   const ids = sortearCartasDiarias(catalogo, 3);
 
-  const referenciaDiario = doc(db, 'pacotesDiarios', reino);
-  const referenciaInventario = doc(db, 'inventarios', reino);
+  const referenciaDiario = doc(db, "pacotesDiarios", reino);
+  const referenciaInventario = doc(db, "inventarios", reino);
 
   await runTransaction(db, async transacao => {
     const diario = await transacao.get(referenciaDiario);
@@ -577,11 +666,10 @@ async function abrirPacoteDiario(reino) {
       Date.now() < ultimo + INTERVALO_DIARIO_MS
     ) {
       const erro = Error(
-        'Pacote indisponível: aguarde a próxima abertura.'
+        "Pacote indisponível: aguarde a próxima abertura."
       );
 
       erro.proximoEm = ultimo + INTERVALO_DIARIO_MS;
-
       throw erro;
     }
 
@@ -608,7 +696,7 @@ async function abrirPacoteDiario(reino) {
 
     if (lista.length > 500) {
       throw Error(
-        'O inventário atingiu o limite de 500 tipos de cartas.'
+        "O inventário atingiu o limite de 500 tipos de cartas."
       );
     }
 
@@ -629,12 +717,8 @@ async function abrirPacoteDiario(reino) {
 // ==================================================
 
 const NIVEL_MAXIMO = 30;
-
 const INTERVALO_TREINO_MS = 4 * 60 * 60 * 1000;
-
 const XP_TREINO = 100;
-
-// XP necessário para passar ao próximo nível.
 
 function xpNecessario(nivel) {
   const numero = Math.max(
@@ -649,8 +733,6 @@ function xpNecessario(nivel) {
   return 100 + numero * 25;
 }
 
-// Procura a evolução cadastrada pelo Admin.
-
 function etapaEvolucao(carta, nivel) {
   const evolucoes = Array.isArray(carta?.evolucoes)
     ? carta.evolucoes
@@ -660,8 +742,6 @@ function etapaEvolucao(carta, nivel) {
     evolucao => Number(evolucao.nivel) === Number(nivel)
   ) || null;
 }
-
-// Calcula os atributos da carta conforme o nível.
 
 function atributosCarta(carta, item) {
   const nivel = Math.max(
@@ -679,7 +759,6 @@ function atributosCarta(carta, item) {
       : null;
 
   const bonus = forma?.bonus || {};
-
   const fator = 1 + nivel * 0.015;
 
   const atributo = nome => {
@@ -695,14 +774,12 @@ function atributosCarta(carta, item) {
     imagem: forma?.imagem || carta.imagem,
     fundo: forma?.fundo || carta.fundo,
     raridade: forma?.raridade || carta.raridade,
-    vida: atributo('vida'),
-    ataque: atributo('ataque'),
-    defesa: atributo('defesa'),
-    velocidade: atributo('velocidade')
+    vida: atributo("vida"),
+    ataque: atributo("ataque"),
+    defesa: atributo("defesa"),
+    velocidade: atributo("velocidade")
   };
 }
-
-// Confere se o usuário pertence ao reino.
 
 function validarReinoDaCarta(usuario, reino) {
   if (
@@ -711,7 +788,7 @@ function validarReinoDaCarta(usuario, reino) {
     usuario.reino !== reino
   ) {
     throw Error(
-      'Entre com a conta do próprio reino para treinar ou evoluir.'
+      "Entre com a conta do próprio reino para treinar ou evoluir."
     );
   }
 }
@@ -719,15 +796,12 @@ function validarReinoDaCarta(usuario, reino) {
 // ==================================================
 // TREINAMENTO
 // ==================================================
-// 100 XP por treino.
-// Intervalo de 4 horas por tipo de carta.
-// Nível máximo: 30.
 
 async function treinarCarta(reino, idCarta) {
   validarReinoDaCarta(await perfil(), reino);
 
-  const referenciaInventario = doc(db, 'inventarios', reino);
-  const referenciaCarta = doc(db, 'cartas', String(idCarta));
+  const referenciaInventario = doc(db, "inventarios", reino);
+  const referenciaCarta = doc(db, "cartas", String(idCarta));
 
   return runTransaction(db, async transacao => {
     const inventarioAtual = await transacao.get(
@@ -739,7 +813,7 @@ async function treinarCarta(reino, idCarta) {
     );
 
     if (!registroCarta.exists()) {
-      throw Error('Carta não encontrada no catálogo.');
+      throw Error("Carta não encontrada no catálogo.");
     }
 
     const carta = registroCarta.data();
@@ -754,7 +828,7 @@ async function treinarCarta(reino, idCarta) {
     );
 
     if (!item || Number(item.quantidade || 0) < 1) {
-      throw Error('Você não possui esta carta.');
+      throw Error("Você não possui esta carta.");
     }
 
     let nivel = Math.max(
@@ -765,7 +839,7 @@ async function treinarCarta(reino, idCarta) {
     let xp = Math.max(0, Number(item.xp) || 0);
 
     if (nivel >= NIVEL_MAXIMO) {
-      throw Error('Esta carta já está no nível máximo.');
+      throw Error("Esta carta já está no nível máximo.");
     }
 
     const bloqueado = (
@@ -776,7 +850,7 @@ async function treinarCarta(reino, idCarta) {
 
     if (bloqueado && xp >= xpNecessario(nivel)) {
       throw Error(
-        'XP completo. Evolua esta carta para continuar treinando.'
+        "XP completo. Evolua esta carta para continuar treinando."
       );
     }
 
@@ -788,7 +862,7 @@ async function treinarCarta(reino, idCarta) {
       agora < ultimoTreino + INTERVALO_TREINO_MS
     ) {
       throw Error(
-        'Treino indisponível. Aguarde 4 horas desde o último treino.'
+        "Treino indisponível. Aguarde 4 horas desde o último treino."
       );
     }
 
@@ -843,15 +917,12 @@ async function treinarCarta(reino, idCarta) {
 // ==================================================
 // EVOLUIR CARTA
 // ==================================================
-// Nível 10 -> 11: padrão 3 duplicatas.
-// Nível 20 -> 21: padrão 5 duplicatas.
-// O Admin poderá alterar esses valores em cada carta.
 
 async function evoluirCarta(reino, idCarta) {
   validarReinoDaCarta(await perfil(), reino);
 
-  const referenciaInventario = doc(db, 'inventarios', reino);
-  const referenciaCarta = doc(db, 'cartas', String(idCarta));
+  const referenciaInventario = doc(db, "inventarios", reino);
+  const referenciaCarta = doc(db, "cartas", String(idCarta));
 
   return runTransaction(db, async transacao => {
     const inventarioAtual = await transacao.get(
@@ -863,7 +934,7 @@ async function evoluirCarta(reino, idCarta) {
     );
 
     if (!registroCarta.exists()) {
-      throw Error('Carta não encontrada no catálogo.');
+      throw Error("Carta não encontrada no catálogo.");
     }
 
     const carta = registroCarta.data();
@@ -878,24 +949,23 @@ async function evoluirCarta(reino, idCarta) {
     );
 
     if (!item) {
-      throw Error('Carta não encontrada no inventário.');
+      throw Error("Carta não encontrada no inventário.");
     }
 
     const nivel = Number(item.nivel ?? 0);
 
     if (nivel !== 10 && nivel !== 20) {
       throw Error(
-        'A evolução exige que a carta esteja no nível 10 ou 20.'
+        "A evolução exige que a carta esteja no nível 10 ou 20."
       );
     }
 
     const proximoNivel = nivel + 1;
-
     const evolucao = etapaEvolucao(carta, proximoNivel);
 
     if (!evolucao) {
       throw Error(
-        'O Admin ainda não cadastrou essa evolução.'
+        "O Admin ainda não cadastrou essa evolução."
       );
     }
 
@@ -925,13 +995,8 @@ async function evoluirCarta(reino, idCarta) {
       );
     }
 
-    // Consome apenas as duplicatas.
-    // A carta principal permanece no inventário.
-
     item.quantidade = quantidade - duplicatasNecessarias;
-
     item.xp = Number(item.xp || 0) - xpExigido;
-
     item.nivel = proximoNivel;
 
     transacao.set(referenciaInventario, {
@@ -973,6 +1038,7 @@ window.RB = {
 
   // Pacotes
   criarPacoteAdmin,
+  criarPacotePersonalizado,
   listarPacotesRecebidos,
   resgatarPacote,
   estadoPacoteDiario,
