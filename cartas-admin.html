@@ -259,6 +259,27 @@
   </button>
 </section>
 
+<section class="secao-painel" id="secao-pacotes">
+  <h2>📦 Enviar pacote personalizado</h2>
+  <p>Escolha o reino destinatário e as cartas que ele receberá.</p>
+  <div class="formulario-carta">
+    <label for="pacote-nome">Nome do pacote</label>
+    <input id="pacote-nome" value="Pacote Especial de Drakmor" maxlength="70">
+    <label for="pacote-reino">Destinatário</label>
+    <select id="pacote-reino">
+      <option value="Drakmor">❄️ Drakmor</option>
+      <option value="Solaris">☀️ Solaris</option>
+      <option value="Aetheryon">☁️ Aetheryon</option>
+    </select>
+    <h3>Cartas escolhidas</h3>
+    <div id="pacote-itens"></div>
+    <button type="button" class="botao-editar-carta" id="pacote-adicionar">➕ Adicionar carta</button>
+    <p id="pacote-total">Total: 0 cartas</p>
+    <button type="button" class="botao-evoluir" id="pacote-enviar">📤 Enviar pacote</button>
+    <p id="pacote-resultado" role="status"></p>
+  </div>
+</section>
+
 <section class="secao-painel" id="secao-formulario">
 
   <div class="titulo-secao">
@@ -1479,6 +1500,68 @@ async function importarAntigas() {
     alert(erro.message);
   }
 }
+
+// ==================================================
+// PACOTES COM CARTAS ESCOLHIDAS
+// ==================================================
+const itensPacote = [];
+function atualizarItensPacote() {
+  const area = $("pacote-itens");
+  area.replaceChildren();
+  itensPacote.forEach((item, indice) => {
+    const linha = document.createElement('div');
+    linha.style.cssText = 'display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap';
+    const selecao = document.createElement('select');
+    selecao.style.flex = '3';
+    for (const carta of cartas) {
+      const opcao = document.createElement('option');
+      opcao.value = String(carta.id);
+      opcao.textContent = `${carta.nome} (${carta.raridade || 'Comum'})`;
+      selecao.appendChild(opcao);
+    }
+    selecao.value = String(item.idCarta);
+    selecao.addEventListener('change', () => { item.idCarta = selecao.value; });
+    const quantidade = document.createElement('input');
+    quantidade.type = 'number'; quantidade.min = '1'; quantidade.max = '30';
+    quantidade.value = item.quantidade; quantidade.style.width = '75px';
+    quantidade.addEventListener('input', () => {
+      item.quantidade = Number(quantidade.value);
+      atualizarTotalPacote();
+    });
+    const remover = document.createElement('button');
+    remover.type = 'button'; remover.textContent = '🗑️';
+    remover.addEventListener('click', () => { itensPacote.splice(indice, 1); atualizarItensPacote(); });
+    linha.append(selecao, quantidade, remover);
+    area.appendChild(linha);
+  });
+  atualizarTotalPacote();
+}
+function atualizarTotalPacote() {
+  $('pacote-total').textContent = 'Total: ' + itensPacote.reduce((n, i) => n + (Number(i.quantidade) || 0), 0) + ' cartas (máximo 30)';
+}
+$('pacote-adicionar').addEventListener('click', () => {
+  if (!cartas.length) return alert('Cadastre uma carta primeiro.');
+  itensPacote.push({idCarta: String(cartas[0].id), quantidade: 1});
+  atualizarItensPacote();
+});
+$('pacote-enviar').addEventListener('click', async () => {
+  const botao = $('pacote-enviar');
+  const nome = $('pacote-nome').value.trim();
+  const reino = $('pacote-reino').value;
+  if (!nome || !itensPacote.length) return alert('Informe o nome e selecione cartas.');
+  if (!confirm(`Enviar ${itensPacote.reduce((n,i)=>n+Number(i.quantidade),0)} cartas para ${reino}?`)) return;
+  botao.disabled = true;
+  $('pacote-resultado').textContent = 'Enviando...';
+  try {
+    await window.RB.criarPacotePersonalizado(nome, reino, itensPacote);
+    $('pacote-resultado').textContent = '✅ Pacote enviado! O reino poderá resgatá-lo.';
+    itensPacote.length = 0;
+    atualizarItensPacote();
+  } catch (erro) {
+    $('pacote-resultado').textContent = '❌ ' + erro.message;
+  } finally { botao.disabled = false; }
+});
+atualizarItensPacote();
 
 // ==================================================
 // INICIAR
