@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
 from sqlalchemy.sql import func
 
 from database import Base
@@ -47,6 +47,17 @@ class Carta(Base):
     vida = Column(Integer, default=0)
 
     imagem = Column(String(1000), nullable=True)
+
+    # Identificador original da carta no Firebase
+    firebase_id = Column(String(100), unique=True, nullable=True)
+
+    # Imagem de fundo da carta
+    fundo = Column(String(1000), nullable=True)
+
+    # Habilidades e progressão
+    ataques = Column(JSON, default=list)
+    passivas = Column(JSON, default=list)
+    evolucoes = Column(JSON, default=list)
 
 
 # ==================================================
