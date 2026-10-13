@@ -14,6 +14,15 @@ app = FastAPI(title="Reinos & Batalhas API")
 
 
 # ==================================================
+# SISTEMA DE INVENTÁRIO
+# ==================================================
+
+from inventario import router as inventario_router
+
+app.include_router(inventario_router)
+
+
+# ==================================================
 # LOGIN COM DISCORD
 # ==================================================
 
