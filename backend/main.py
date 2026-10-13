@@ -23,6 +23,16 @@ app.include_router(inventario_router)
 
 
 # ==================================================
+# CATÁLOGO DE CARTAS
+# ==================================================
+
+from cartas import router as cartas_router
+
+app.include_router(cartas_router)
+
+
+
+# ==================================================
 # LOGIN COM DISCORD
 # ==================================================
 
