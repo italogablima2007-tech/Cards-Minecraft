@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 
 from database import Base
@@ -47,3 +47,37 @@ class Carta(Base):
     vida = Column(Integer, default=0)
 
     imagem = Column(String(1000), nullable=True)
+
+
+# ==================================================
+# INVENTÁRIO DOS JOGADORES
+# ==================================================
+
+class Inventario(Base):
+    __tablename__ = "inventarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    jogador_id = Column(
+        Integer,
+        ForeignKey("jogadores.id"),
+        nullable=False,
+        index=True
+    )
+
+    carta_id = Column(
+        Integer,
+        ForeignKey("cartas.id"),
+        nullable=False,
+        index=True
+    )
+
+    nivel = Column(Integer, default=1)
+
+    xp = Column(Integer, default=0)
+
+    criado_em = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
+
