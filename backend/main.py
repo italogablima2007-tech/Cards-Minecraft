@@ -14,6 +14,26 @@ app = FastAPI(title="Reinos & Batalhas API")
 
 
 # ==================================================
+# LOGIN COM DISCORD
+# ==================================================
+
+import os
+from starlette.middleware.sessions import SessionMiddleware
+from auth import router as discord_router
+
+SESSION_SECRET = os.environ["SESSION_SECRET"]
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    same_site="lax",
+    https_only=True
+)
+
+app.include_router(discord_router)
+
+
+# ==================================================
 # CRIAÇÃO DAS TABELAS
 # ==================================================
 
