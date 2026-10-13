@@ -82,3 +82,29 @@ def verificar_tabelas():
         "jogadores_criada": "jogadores" in tabelas
     }
 
+
+# ==================================================
+# CONSULTAR JOGADORES CADASTRADOS
+# ==================================================
+
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from database import get_db
+from models import Jogador
+
+
+@app.get("/jogadores")
+def listar_jogadores(db: Session = Depends(get_db)):
+    jogadores = db.query(Jogador).all()
+
+    return {
+        "total": len(jogadores),
+        "jogadores": [
+            {
+                "id": jogador.id,
+                "nome": jogador.nome,
+                "reino": jogador.reino
+            }
+            for jogador in jogadores
+        ]
+    }
