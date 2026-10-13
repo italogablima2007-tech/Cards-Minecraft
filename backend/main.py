@@ -61,3 +61,24 @@ def testar_banco():
             "banco": "PostgreSQL",
             "status": "erro de conexao"
         }
+
+
+# ==================================================
+# VERIFICAR TABELAS DO BANCO
+# ==================================================
+
+from sqlalchemy import inspect
+
+
+@app.get("/database-tables")
+def verificar_tabelas():
+    inspector = inspect(engine)
+
+    tabelas = inspector.get_table_names()
+
+    return {
+        "banco": "PostgreSQL",
+        "tabelas": tabelas,
+        "jogadores_criada": "jogadores" in tabelas
+    }
+
