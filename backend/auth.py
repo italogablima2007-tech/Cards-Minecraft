@@ -7,6 +7,10 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
+from sqlalchemy.exc import IntegrityError
+from database import SessionLocal
+from jogadores import buscar_jogador_por_discord, criar_jogador
+
 router = APIRouter(
     prefix="/auth/discord",
     tags=["Discord"]
@@ -104,6 +108,37 @@ async def discord_callback(
 
         dados = usuario.json()
 
+
+    # Cadastrar ou reconhecer jogador
+    db = SessionLocal()
+
+    try:
+        discord_id = str(dados["id"])
+        nome = dados["username"]
+
+        jogador = buscar_jogador_por_discord(
+            db, discord_id
+        )
+
+        if jogador is None:
+            try:
+                jogador = criar_jogador(
+                    db, discord_id, nome
+                )
+            except IntegrityError:
+                db.rollback()
+                jogador = buscar_jogador_por_discord(
+                    db, discord_id
+                )
+                if jogador is None:
+                    raise
+
+        jogador_id = jogador.id
+
+    finally:
+        db.close()
+
+    
     # Guardamos somente os dados necessários
     request.session["discord_id"] = dados["id"]
     request.session["discord_nome"] = dados["username"]
