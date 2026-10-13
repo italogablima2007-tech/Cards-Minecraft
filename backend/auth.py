@@ -142,6 +142,8 @@ async def discord_callback(
     # Guardamos somente os dados necessários
     request.session["discord_id"] = dados["id"]
     request.session["discord_nome"] = dados["username"]
+    request.session["jogador_id"] = jogador_id
+
 
     return RedirectResponse(
         url="/auth/discord/me",
