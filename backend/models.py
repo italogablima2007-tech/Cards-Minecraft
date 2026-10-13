@@ -72,7 +72,7 @@ class Inventario(Base):
         index=True
     )
 
-    nivel = Column(Integer, default=1)
+    nivel = Column(Integer, default=0)
 
     xp = Column(Integer, default=0)
 
