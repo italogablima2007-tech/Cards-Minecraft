@@ -110,7 +110,7 @@ let equipe=[],inicial=null,aliados=Array(4).fill(null),inimigos=Array(4).fill(nu
 let reservaInimiga=[],acoesRestantes=new Set();
 function registrar(msg){if($('historico').textContent.trim()==='Aguardando preparação...')$('historico').replaceChildren();$('historico').prepend(criar('p','',msg));}
 function aviso(s){$('mensagem').textContent=s;}
-function instancia(c,entrada){return {...c,uid:crypto.randomUUID?crypto.randomUUID():String(Math.random()),vidaAtual:Math.max(1,numero(c.vida,100)),vidaMax:Math.max(1,numero(c.vida,100)),entrada,efeitos:[],usosPassivas:{}};}
+function instancia(c,entrada){return {...c,uid:(globalThis.crypto?.randomUUID?.()||String(Math.random())),vidaAtual:Math.max(1,numero(c.vida,100)),vidaMax:Math.max(1,numero(c.vida,100)),entrada,efeitos:[],usosPassivas:{}};}
 function vivos(campo){return campo.filter(Boolean);}
 function emReserva(){const ids=new Set(vivos(aliados).map(c=>c.id));return equipe.filter(c=>!ids.has(c.id));}
 function vidaHtml(box,c){const barra=criar('div','vida');const valor=criar('div');valor.style.width=(100*c.vidaAtual/c.vidaMax)+'%';barra.appendChild(valor);box.appendChild(barra);box.appendChild(criar('small','',`${Math.ceil(c.vidaAtual)}/${c.vidaMax} PV`));}
@@ -124,16 +124,49 @@ function simular(){if(inimigoPronto)return;inimigoPronto=true;aviso('O adversár
 function checarInicio(){if(iniciou||!pronto||!inimigoPronto)return;iniciou=true;rodada=1;aliados[0]=instancia(inicial,1);const opcoes=equipe.filter(c=>c.id!==inicial.id);const c=opcoes[sortear(0,opcoes.length-1)]||equipe[0];if(c)inimigos[0]=instancia(c,1);reservaInimiga=equipe.filter(x=>x.id!==c?.id);terreno=terrenos[sortear(0,terrenos.length-1)];$('nome-terreno').textContent=terreno.nome;desenharCenario();$('efeito-terreno').textContent=Object.entries(terreno.mod).map(([tipo,m])=>`${tipo} ${m>=1?'+':'−'}${Math.round(Math.abs(m-1)*100)}%`).join(' | ');$('titulo-fase').textContent='⚔️ Batalha';$('instrucao-campo').textContent='Cartas posicionadas não podem ser trocadas.';$('instrucao-reserva').textContent='Novas cartas podem entrar a partir da rodada 2.';registrar(`🎲 Terreno: ${terreno.nome}`);registrar(`⚔️ ${aliados[0].nome} enfrenta ${inimigos[0]?.nome||'ninguém'}!`);aplicarPassivasEntrada(aliados[0],aliados,inimigos);if(inimigos[0])aplicarPassivasEntrada(inimigos[0],inimigos,aliados);iniciarRodada();}
 function iniciarRodada(){invocou=false;modoInvocacao=false;modoAtaque=false;atacanteSlot=null;habilidadeIndex=null;acoesRestantes=new Set(vivos(aliados).filter(c=>c.entrada<rodada||rodada===1).map(c=>c.uid));registrar(`📢 Rodada ${rodada} iniciada.`);atualizar();}
 function ativarInvocacao(){if(!iniciou||terminou||rodada<2||invocou||vivos(aliados).length>=4||!emReserva().length)return;modoInvocacao=!modoInvocacao;modoAtaque=false;atacanteSlot=null;habilidadeIndex=null;aviso(modoInvocacao?'Escolha uma carta da reserva.':'Invocação cancelada.');atualizar()}
-function invocar(carta){if(!modoInvocacao||rodada<2||invocou||terminou||!emReserva().some(c=>c.id===carta.id))return;const i=aliados.findIndex(c=>!c);if(i<0)return;aliados[i]=instancia(carta,rodada);invocou=true;modoInvocacao=false;registrar(`✨ Você invocou ${carta.nome}. Ela só poderá agir na próxima rodada.`);aplicarPassivasEntrada(aliados[i],aliados,inimigos);atualizar();}
+function invocar(carta){if(!modoInvocacao||rodada<2||invocou||terminou||!emReserva().some(c=>c.id===carta.id))return;const i=aliados.findIndex(c=>!c);if(i<0)return;aliados[i]=instancia(carta,rodada);invocou=true;modoInvocacao=false;registrar(`✨ Você invocou ${carta.nome}. Ela só poderá agir na próxima rodada.`);aplicarPassivasEntrada(aliados[i],aliados,inimigos);aplicarAurasNaNovaCarta(aliados[i],aliados,inimigos);atualizar();}
 function ativarAtaque(){if(terminou||!iniciou)return;modoAtaque=!modoAtaque;modoInvocacao=false;atacanteSlot=null;habilidadeIndex=null;aviso(modoAtaque?'Clique em uma carta aliada destacada para escolher seu ataque.':'Seleção de ataque cancelada.');atualizar()}
-function selecionarAtacante(i){if(!podeAtacar(i))return;atacanteSlot=i;habilidadeIndex=null;const c=aliados[i];$('nome-atacante').textContent=`⚔️ ${c.nome} — escolha uma habilidade`;$('habilidades').replaceChildren();if(!c.ataques.length){$('habilidades').appendChild(criar('p','','Esta carta não possui ataques cadastrados.'));}for(const [index,h] of c.ataques.entries()){const nome=h.nome||`Habilidade ${index+1}`;const [dmin,dmax]=faixaDano(h);const dano=habilidadeCura(h)?' • 💚 Cura':dmax>0?` • ${dmin}–${dmax} dano`:' • suporte/sem dano';const b=criar('button','',`${nome}${dano} • ${numero(h.precisao,100)}%`);b.onclick=()=>{habilidadeIndex=index;for(const x of $('habilidades').querySelectorAll('button'))x.classList.remove('ativo');b.classList.add('ativo');aviso(habilidadeCura(h)?'Clique na carta aliada que deseja curar.':'Clique no inimigo que receberá a habilidade.');desenharCampo()};$('habilidades').appendChild(b)}atualizar();}
-function modificador(c,tipo){let m=1;for(const e of c.efeitos){if(e.tipo==='aumentar_dano'&&tipo==='dano')m*=1+e.valor;if(e.tipo==='reduzir_dano'&&tipo==='dano')m*=1-e.valor;if(e.tipo==='aumentar_velocidade'&&tipo==='velocidade')m*=1+e.valor;if(e.tipo==='reduzir_velocidade'&&tipo==='velocidade')m*=1-e.valor;if(e.tipo==='aumentar_precisao'&&tipo==='precisao')m*=1+e.valor;if(e.tipo==='reduzir_precisao'&&tipo==='precisao')m*=1-e.valor;if(e.tipo==='reduzir_dano_recebido'&&tipo==='recebido')m*=1-e.valor;if(e.tipo==='aumentar_dano_recebido'&&tipo==='recebido')m*=1+e.valor;}return m;}
-function velocidade(c){return numero(c.velocidade,1)*modificador(c,'velocidade')}
-function chance(h,c){return limitar(numero(h.precisao,100)*modificador(c,'precisao'),0,100)}
-function valorEfeito(e){let n=numero(e.valor,0);return n>1?n/100:n;}
-function aplicarEfeito(alvo,ef,origem){if(!ef||typeof ef!=='object')return;const tipo=String(ef.tipo||'').trim().toLowerCase();const valor=valorEfeito(ef);const duracao=Math.max(1,Math.round(numero(ef.duracao,1)));const suportados=['reduzir_velocidade','aumentar_velocidade','reduzir_precisao','aumentar_precisao','aumentar_dano','reduzir_dano','reduzir_dano_recebido','aumentar_dano_recebido'];if(!suportados.includes(tipo)){registrar(`ℹ️ Efeito “${tipo||'desconhecido'}” de ${origem} ainda não implementado.`);return}alvo.efeitos.push({tipo,valor,duracao,nome:tipo.replaceAll('_',' ')});registrar(`✨ ${alvo.nome}: ${tipo.replaceAll('_',' ')} (${Math.round(valor*100)}%, ${duracao} rodada(s)).`);}
+function selecionarAtacante(i){if(!podeAtacar(i))return;atacanteSlot=i;habilidadeIndex=null;const c=aliados[i];$('nome-atacante').textContent=`⚔️ ${c.nome} — escolha uma habilidade`;$('habilidades').replaceChildren();if(!c.ataques.length){$('habilidades').appendChild(criar('p','','Esta carta não possui ataques cadastrados.'));}for(const [index,h] of c.ataques.entries()){const nome=h.nome||`Habilidade ${index+1}`;const [dmin,dmax]=faixaDano(h);const dano=habilidadeCura(h)?' • 💚 Cura':dmax>0?` • ${dmin}–${dmax} dano`:' • suporte/sem dano';const base=numero(h.precisao,100);const efetiva=chance(h,c);const b=criar('button','',`${nome}${dano} • 🎯 ${Math.round(efetiva)}%${Math.round(efetiva)!==Math.round(base)?` (base ${base}%)`:''}`);b.onclick=()=>{habilidadeIndex=index;for(const x of $('habilidades').querySelectorAll('button'))x.classList.remove('ativo');b.classList.add('ativo');aviso(habilidadeCura(h)?'Clique na carta aliada que deseja curar.':'Clique no inimigo que receberá a habilidade.');desenharCampo()};$('habilidades').appendChild(b)}atualizar();}
+function categoriaEfeito(tipo){
+ const t=tipoNormalizado(tipo);
+ const mapa={ataque:['ataque','atq','attack'],defesa:['defesa','def','defense'],velocidade:['velocidade','speed'],precisao:['precisao','accuracy','acerto'],evasao:['evasao','esquiva','evasion'],dano:['dano','damage','dano_causado'],recebido:['dano_recebido','received_damage','recebido'],cura:['cura_recebida','healing_received'],vida:['vida_maxima','vida_max','vida','hp_max']};
+ for(const [categoria,nomes] of Object.entries(mapa))for(const nome of nomes)if(t===nome)return categoria;
+ return null;
+}
+function decodificarEfeito(tipo){
+ const t=tipoNormalizado(tipo);
+ const prefixos=[['aumentar_',1],['reduzir_',-1],['diminuir_',-1],['buff_',1],['debuff_',-1],['bonus_',1]];
+ for(const [p,sinal] of prefixos)if(t.startsWith(p))return {categoria:categoriaEfeito(t.slice(p.length)),sinal};
+ return {categoria:null,sinal:0};
+}
+function modificador(c,tipo){
+ let m=1;
+ for(const e of c.efeitos){
+  const {categoria,sinal}=decodificarEfeito(e.tipo);
+  if(categoria!==tipo||!sinal)continue;
+  const v=Math.max(0,numero(e.valor));
+  m*=sinal>0?1+v:Math.max(0,1-v);
+ }
+ return Math.max(0,m);
+}
+function atributo(c,nome){return Math.max(0,numero(c[nome]) * modificador(c,nome));}
+function velocidade(c){return atributo(c,'velocidade')}
+function chance(h,c,alvo=null){return limitar(numero(h.precisao,100)*modificador(c,'precisao')/(alvo?Math.max(.01,modificador(alvo,'evasao')):1),0,100)}
+function valorEfeito(e){let n=numero(e.valor??e.porcentagem??e.percentual,0);return n>1?n/100:n;}
+function aplicarEfeito(alvo,ef,origem,opcoes={}){
+ if(!ef||typeof ef!=='object')return;
+ const tipo=tipoNormalizado(ef.tipo);
+ const valor=valorEfeito(ef);
+ const duracao=Math.max(1,Math.round(numero(ef.duracao,1)));
+ const {categoria}=decodificarEfeito(tipo);
+ if(!categoria){registrar(`ℹ️ Efeito “${tipo||'desconhecido'}” de ${origem} ainda não implementado.`);return}
+ // Evita multiplicar a mesma passiva quando cartas novas entram.
+ if(opcoes.passiva&&alvo.efeitos.some(e=>e.passiva&&e.fonte===opcoes.fonte&&e.tipo===tipo))return;
+ alvo.efeitos.push({tipo,valor,duracao:opcoes.passiva?Infinity:duracao,nome:tipo.replaceAll('_',' '),passiva:!!opcoes.passiva,fonte:opcoes.fonte||null});
+ registrar(`✨ ${alvo.nome}: ${tipo.replaceAll('_',' ')} (${Math.round(valor*100)}%, ${opcoes.passiva?'enquanto a fonte estiver em campo':duracao+' rodada(s)'}).`);
+}
 function efeitosDaHabilidade(h){if(Array.isArray(h.efeitos))return h.efeitos;if(h.efeito)return Array.isArray(h.efeito)?h.efeito:[h.efeito];return[];}
-function ehBenefico(tipo){return /^(aumentar_|reduzir_dano_recebido)/.test(tipo)}
+function ehBenefico(tipo){const e=decodificarEfeito(tipo);return e.sinal>0&&e.categoria!=='recebido'||e.sinal<0&&e.categoria==='recebido'}
 function faixaDano(h){
   let minimo=h.dano_min??h.danoMin??h.dano_minimo??h.danoMinimo;
   let maximo=h.dano_max??h.danoMax??h.dano_maximo??h.danoMaximo;
@@ -258,7 +291,7 @@ function executarCura(indice){
  if(acertou)animarCura(alvo,recuperado);
  else efeitoFlutuante('campo-jogador',indice,'FALHOU','erro');
 }
-function danoCalculado(atacante,alvo,h){const [valorMin,valorMax]=faixaDano(h);const minimo=Math.floor(valorMin);const maximo=Math.max(minimo,Math.floor(valorMax));const base=sortear(minimo,maximo);const tipo=normalizarTipo(h.tipo_dano);const multTerreno=terreno?.mod[tipo]||1;const multAtq=modificador(atacante,'dano');const multRec=modificador(alvo,'recebido');const defesa=Math.max(0,numero(alvo.defesa));const fatorDefesa=100/(100+defesa);const final=Math.max(base>0?1:0,Math.round(base*multTerreno*multAtq*multRec*fatorDefesa));return {base,final,tipo,multTerreno,defesa};}
+function danoCalculado(atacante,alvo,h){const [valorMin,valorMax]=faixaDano(h);const minimo=Math.floor(valorMin);const maximo=Math.max(minimo,Math.floor(valorMax));const base=sortear(minimo,maximo);const tipo=normalizarTipo(h.tipo_dano);const multTerreno=terreno?.mod[tipo]||1;const multAtq=modificador(atacante,'dano')*modificador(atacante,'ataque');const multRec=modificador(alvo,'recebido');const defesa=atributo(alvo,'defesa');const fatorDefesa=100/(100+defesa);const final=Math.max(base>0?1:0,Math.round(base*multTerreno*multAtq*multRec*fatorDefesa));return {base,final,tipo,multTerreno,defesa};}
 function removerMorto(campo){
  const id=campo===aliados?'campo-jogador':'campo-inimigo';
  for(let i=0;i<campo.length;i++){
@@ -266,7 +299,7 @@ function removerMorto(campo){
   if(c&&c.vidaAtual<=0){
    animarDerrota(id,i);
    registrar(`💀 ${c.nome} foi derrotada!`);
-   campo[i]=null;
+   campo[i]=null;limparPassivasDeDerrotados();
   }
  }
 }
@@ -285,9 +318,9 @@ function executarGolpe(atacante,alvo,h,campoAlvo){
  const alvos=posicoesAfetadas(campoAlvo,alvo,h);
  const resultados=[];
  for(const {carta:vitima} of alvos){
-  const acerto=Math.random()*100<chance(h,atacante);
+  const precisaoFinal=chance(h,atacante,vitima);const acerto=Math.random()*100<precisaoFinal;
   if(!acerto){
-   registrar(`❌ ${atacante.nome} errou ${nome} contra ${vitima.nome}.`);
+   registrar(`❌ ${atacante.nome} errou ${nome} contra ${vitima.nome} (precisão efetiva: ${precisaoFinal.toFixed(1)}%).`);
    resultados.push({alvo:vitima,dano:0,acertou:false});
    continue;
   }
@@ -322,12 +355,77 @@ function executarAtaque(indice){
   if(pos>=0)animarGolpe(c,r.alvo,r.dano,r.acertou);
  }
 }
-function aplicarPassivasEntrada(c,amigos,oponentes){for(const p of c.passivas){const nome=p.nome||'Passiva';const ef=p.efeito||p;const tipo=String(ef.tipo||'').toLowerCase();if(tipo==='aumentar_vida'){const v=valorEfeito(ef);for(const aliado of vivos(amigos)){const extra=Math.round(aliado.vidaMax*v);aliado.vidaMax+=extra;aliado.vidaAtual+=extra}registrar(`🌟 ${c.nome}: ${nome} aumentou a vida dos aliados.`)}else if(['reduzir_velocidade','aumentar_velocidade','reduzir_precisao','aumentar_precisao','aumentar_dano','reduzir_dano','reduzir_dano_recebido'].includes(tipo)){const afetaInimigos=tipo.startsWith('reduzir_')&&tipo!=='reduzir_dano_recebido';for(const alvo of vivos(afetaInimigos?oponentes:amigos))aplicarEfeito(alvo,ef,nome);registrar(`🌟 Passiva ${nome} ativada.`)}else registrar(`ℹ️ Passiva “${nome}” ainda não possui execução automática nesta versão.`);}}
-function passarEfeitos(c){c.efeitos=c.efeitos.filter(e=>{e.duracao--;return e.duracao>0})}
+function aplicarPassivasEntrada(c,amigos,oponentes){
+ for(const p of c.passivas){
+  const nome=p.nome||'Passiva';
+  const efeitos=efeitosDaHabilidade(p).length?efeitosDaHabilidade(p):[p];
+  for(const ef of efeitos){
+   const tipo=tipoNormalizado(ef.tipo);
+   if(tipo==='aumentar_vida'){
+    const v=valorEfeito(ef);
+    for(const aliado of vivos(amigos)){
+     aliado.bonusVidaPassiva??=[];
+     if(aliado.bonusVidaPassiva.includes(c.uid))continue;
+     const extra=Math.round(aliado.vidaMax*v);
+     aliado.vidaMax+=extra;aliado.vidaAtual+=extra;
+     aliado.bonusVidaPassiva.push(c.uid);
+    }
+    registrar(`🌟 ${c.nome}: ${nome} aumentou a vida dos aliados.`);
+   }else if(!!decodificarEfeito(tipo).categoria){
+    const destino=ef.alvo||ef.destino||p.alvo||p.destino;
+    const hostil=/inimig|oponent|advers/i.test(String(destino))||(!destino&&!ehBenefico(tipo));
+    for(const alvo of vivos(hostil?oponentes:amigos))aplicarEfeito(alvo,ef,nome,{passiva:true,fonte:c.uid});
+    registrar(`🌟 Passiva ${nome} de ${c.nome} ativada.`);
+   }else registrar(`ℹ️ Passiva “${nome}” (${tipo||'sem tipo'}) ainda não possui execução automática.`);
+  }
+ }
+}
+function aplicarAurasNaNovaCarta(c,amigos,oponentes){
+ for(const fonte of vivos(amigos)){
+  if(fonte===c)continue;
+  for(const p of fonte.passivas){
+   const efeitos=efeitosDaHabilidade(p).length?efeitosDaHabilidade(p):[p];
+   for(const ef of efeitos){
+    const tipo=tipoNormalizado(ef.tipo);
+    const destino=ef.alvo||ef.destino||p.alvo||p.destino;
+    const hostil=/inimig|oponent|advers/i.test(String(destino))||(!destino&&!ehBenefico(tipo));
+    if(hostil)continue;
+    if(tipo==='aumentar_vida'){
+     c.bonusVidaPassiva??=[];
+     if(c.bonusVidaPassiva.includes(fonte.uid))continue;
+     const extra=Math.round(c.vidaMax*valorEfeito(ef));
+     c.vidaMax+=extra;c.vidaAtual+=extra;c.bonusVidaPassiva.push(fonte.uid);
+    }else if(!!decodificarEfeito(tipo).categoria){
+     aplicarEfeito(c,ef,p.nome||'Passiva',{passiva:true,fonte:fonte.uid});
+    }
+   }
+  }
+ }
+ // Passivas hostis que já estavam em campo também atingem reforços.
+ for(const fonte of vivos(oponentes)){
+  for(const p of fonte.passivas){
+   const efeitos=efeitosDaHabilidade(p).length?efeitosDaHabilidade(p):[p];
+   for(const ef of efeitos){
+    const tipo=tipoNormalizado(ef.tipo);
+    const destino=ef.alvo||ef.destino||p.alvo||p.destino;
+    const hostil=/inimig|oponent|advers/i.test(String(destino))||(!destino&&!ehBenefico(tipo));
+    if(hostil&&!!decodificarEfeito(tipo).categoria)
+      aplicarEfeito(c,ef,p.nome||'Passiva',{passiva:true,fonte:fonte.uid});
+   }
+  }
+ }
+}
+function limparPassivasDeDerrotados(){
+ const fontes=new Set([...vivos(aliados),...vivos(inimigos)].map(c=>c.uid));
+ for(const carta of [...vivos(aliados),...vivos(inimigos)]){
+  carta.efeitos=carta.efeitos.filter(e=>!e.passiva||fontes.has(e.fonte));
+ }
+}
+function passarEfeitos(c){c.efeitos=c.efeitos.filter(e=>{if(e.passiva)return true;e.duracao--;return e.duracao>0})}
 function acaoInimiga(){const disponiveis=vivos(inimigos).filter(c=>c.entrada<rodada||rodada===1).sort((a,b)=>velocidade(b)-velocidade(a));for(const c of disponiveis){if(terminou)break;const alvos=vivos(aliados);if(!alvos.length)break;const alvo=alvos[sortear(0,alvos.length-1)];const ataques=c.ataques.filter(h=>h&&typeof h==='object');if(!ataques.length){registrar(`ℹ️ ${c.nome} não possui ataques cadastrados.`);continue}const h=ataques[sortear(0,ataques.length-1)];
  const destino=habilidadeCura(h)?vivos(inimigos).sort((a,b)=>a.vidaAtual/a.vidaMax-b.vidaAtual/b.vidaMax)[0]:alvo;
  executarGolpe(c,destino,h,aliados);verificarFim();}}
-function invocarInimigo(){if(rodada<2||vivos(inimigos).length>=4||!reservaInimiga.length||terminou)return;const i=inimigos.findIndex(c=>!c);const escolha=reservaInimiga.splice(sortear(0,reservaInimiga.length-1),1)[0];inimigos[i]=instancia(escolha,rodada);registrar(`🔴 O adversário invocou ${escolha.nome}.`);aplicarPassivasEntrada(inimigos[i],inimigos,aliados);}
+function invocarInimigo(){if(rodada<2||vivos(inimigos).length>=4||!reservaInimiga.length||terminou)return;const i=inimigos.findIndex(c=>!c);const escolha=reservaInimiga.splice(sortear(0,reservaInimiga.length-1),1)[0];inimigos[i]=instancia(escolha,rodada);registrar(`🔴 O adversário invocou ${escolha.nome}.`);aplicarPassivasEntrada(inimigos[i],inimigos,aliados);aplicarAurasNaNovaCarta(inimigos[i],inimigos,aliados);}
 function verificarFim(){if(terminou)return;const jogadorSemCartas=!vivos(aliados).length&&!emReserva().length;const inimigoSemCartas=!vivos(inimigos).length&&!reservaInimiga.length;if(jogadorSemCartas||inimigoSemCartas){terminou=true;registrar(jogadorSemCartas&&inimigoSemCartas?'🤝 Empate!':inimigoSemCartas?'🏆 Vitória!':'💀 Derrota!');aviso('Combate encerrado. Atualize a página para testar outra batalha.');}}
 function encerrarRodada(){if(!iniciou||terminou)return;modoAtaque=false;modoInvocacao=false;atacanteSlot=null;habilidadeIndex=null;registrar(`⏭️ Você encerrou suas ações da rodada ${rodada}.`);acaoInimiga();verificarFim();if(terminou){atualizar();return}for(const c of [...vivos(aliados),...vivos(inimigos)])passarEfeitos(c);rodada++;invocarInimigo();iniciarRodada();}
 async function carregar(){try{const r=await fetch(`${API}/cartas`);if(!r.ok)throw Error(`HTTP ${r.status}`);const dados=await r.json();equipe=(dados.cartas||[]).slice(0,7).map(c=>({id:c.id,nome:c.nome||'Carta sem nome',imagem:c.imagem||'',vida:numero(c.vida,100),ataque:numero(c.ataque),defesa:numero(c.defesa),velocidade:numero(c.velocidade),ataques:listaHabilidades(c.ataques||c.habilidades),passivas:listaHabilidades(c.passivas)}));if(!equipe.length)aviso('Não há cartas no catálogo.');else aviso(`${equipe.length} cartas carregadas do PostgreSQL para testes.`);atualizar()}catch(e){aviso(`Erro ao carregar cartas: ${e.message}`)}}
