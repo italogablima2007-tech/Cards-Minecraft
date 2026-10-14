@@ -95,9 +95,7 @@ class Inventario(Base):
     quantidade = Column(Integer, default=1)
 
     # Horário do último treinamento (milissegundos)
-    ultimo_treino = Column(Integer().with_variant(
-        __import__("sqlalchemy").BigInteger, "postgresql"
-    ), default=0)
+    ultimo_treino = Column(BigInteger, default=0)
 
     criado_em = Column(
         DateTime(timezone=True),
