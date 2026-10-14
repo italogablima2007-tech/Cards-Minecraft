@@ -1,16 +1,38 @@
 
-from fastapi import FastAPI
-from sqlalchemy import text
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+
+from sqlalchemy import text, inspect
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from database import Base, engine
+from database import Base, engine, get_db
+from models import Jogador
 import models
+
+import os
+from starlette.middleware.sessions import SessionMiddleware
 
 # ==================================================
 # CONFIGURAÇÃO DA API
 # ==================================================
 
 app = FastAPI(title="Reinos & Batalhas API")
+
+
+# ==================================================
+# PERMITIR CONEXÃO COM O SITE (CORS)
+# ==================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://italogablima2007-tech.github.io"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
 # ==================================================
@@ -31,13 +53,10 @@ from cartas import router as cartas_router
 app.include_router(cartas_router)
 
 
-
 # ==================================================
 # LOGIN COM DISCORD
 # ==================================================
 
-import os
-from starlette.middleware.sessions import SessionMiddleware
 from auth import router as discord_router
 
 SESSION_SECRET = os.environ["SESSION_SECRET"]
@@ -106,9 +125,6 @@ def testar_banco():
 # VERIFICAR TABELAS DO BANCO
 # ==================================================
 
-from sqlalchemy import inspect
-
-
 @app.get("/database-tables")
 def verificar_tabelas():
     inspector = inspect(engine)
@@ -125,12 +141,6 @@ def verificar_tabelas():
 # ==================================================
 # CONSULTAR JOGADORES CADASTRADOS
 # ==================================================
-
-from sqlalchemy.orm import Session
-from fastapi import Depends
-from database import get_db
-from models import Jogador
-
 
 @app.get("/jogadores")
 def listar_jogadores(db: Session = Depends(get_db)):
