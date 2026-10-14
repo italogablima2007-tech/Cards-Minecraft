@@ -40,6 +40,23 @@
 .derrota-fragmento{position:absolute;background:linear-gradient(135deg,#a9e9ff,#edfaff 45%,#5479b5);border:1px solid #e4faff;box-shadow:0 0 11px #b9efff;animation:fragmentar 1.3s ease-out forwards;animation-delay:.35s;opacity:0}
 @keyframes fragmentar{0%{opacity:0;transform:translate(0,0) rotate(0deg) scale(1)}8%{opacity:1;filter:brightness(2.4)}50%{opacity:1;filter:brightness(3.5)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(.08);filter:brightness(5)}}
 </style>
+
+<style>
+/* Efeitos cinematográficos sobre as cartas e o cenário */
+#campo-cenario{--efeito-cor:#b8eaff}
+.fx-camada{position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:hidden}
+.fx-projetil{position:absolute;width:25px;height:25px;border-radius:50%;background:var(--cor);box-shadow:0 0 13px 5px var(--cor),0 0 40px 13px var(--cor);transform:translate(-50%,-50%);animation:fx-voo .46s cubic-bezier(.12,.6,.5,1) forwards}
+@keyframes fx-voo{from{left:var(--x1);top:var(--y1);opacity:1;transform:translate(-50%,-50%) scale(.6)}to{left:var(--x2);top:var(--y2);opacity:1;transform:translate(-50%,-50%) scale(1.4)}}
+.fx-particula{position:absolute;left:var(--x);top:var(--y);width:var(--t);height:var(--t);background:var(--cor);box-shadow:0 0 8px var(--cor);border-radius:2px;animation:fx-espalhar .72s ease-out forwards}
+@keyframes fx-espalhar{0%{opacity:1;transform:translate(-50%,-50%) scale(.7)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--giro)) scale(.12)}}
+.fx-corte{position:absolute;left:var(--x);top:var(--y);height:9px;width:105px;transform-origin:center;background:linear-gradient(90deg,transparent,#fff,var(--cor),transparent);filter:drop-shadow(0 0 12px var(--cor));animation:fx-cortar .44s ease-out forwards}
+@keyframes fx-cortar{0%{opacity:0;transform:translate(-50%,-50%) rotate(-48deg) scaleX(.1)}35%{opacity:1;transform:translate(-50%,-50%) rotate(-48deg) scaleX(1.3)}100%{opacity:0;transform:translate(-50%,-50%) rotate(-48deg) scaleX(1.5)}}
+.fx-onda{position:absolute;left:var(--x);top:var(--y);width:24px;height:24px;border:4px solid var(--cor);border-radius:50%;box-shadow:0 0 20px var(--cor);animation:fx-onda .62s ease-out forwards}
+@keyframes fx-onda{from{opacity:1;transform:translate(-50%,-50%) scale(.2)}to{opacity:0;transform:translate(-50%,-50%) scale(6)}}
+.fx-tela{position:absolute;inset:0;background:var(--cor);opacity:0;animation:fx-flash .36s ease-out forwards}
+@keyframes fx-flash{0%{opacity:0}30%{opacity:.15}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.fx-camada *,.espaco.atacando,.espaco.golpeado{animation-duration:.01ms!important}}
+</style>
 </head>
 <body><main class="arena">
 <header class="topo"><div><p>⚔️ REINOS & BATALHAS</p><h1>Arena de Combate</h1><p>Invocação Progressiva • Simulação contra computador</p></div><button onclick="history.back()">← Voltar</button></header>
@@ -288,7 +305,7 @@ function executarCura(indice){
  }else registrar(`❌ ${c.nome} falhou ao usar ${h.nome||'Cura'}.`);
  modoAtaque=false;atacanteSlot=null;habilidadeIndex=null;
  verificarFim();atualizar();
- if(acertou)animarCura(alvo,recuperado);
+ if(acertou){animarCura(alvo,recuperado);const p=FX.centro('campo-jogador',indice);FX.animar(p,p,h,true);}
  else efeitoFlutuante('campo-jogador',indice,'FALHOU','erro');
 }
 function danoCalculado(atacante,alvo,h){const [valorMin,valorMax]=faixaDano(h);const minimo=Math.floor(valorMin);const maximo=Math.max(minimo,Math.floor(valorMax));const base=sortear(minimo,maximo);const tipo=normalizarTipo(h.tipo_dano);const multTerreno=terreno?.mod[tipo]||1;const multAtq=modificador(atacante,'dano')*modificador(atacante,'ataque');const multRec=modificador(alvo,'recebido');const defesa=atributo(alvo,'defesa');const fatorDefesa=100/(100+defesa);const final=Math.max(base>0?1:0,Math.round(base*multTerreno*multAtq*multRec*fatorDefesa));return {base,final,tipo,multTerreno,defesa};}
@@ -303,6 +320,101 @@ function removerMorto(campo){
   }
  }
 }
+
+/* Sistema visual independente: não modifica cálculos nem atributos */
+const FX={
+ camada:null,
+ iniciar(){
+  if(!this.camada){this.camada=criar('div','fx-camada');document.body.appendChild(this.camada)}
+  return this.camada;
+ },
+ centro(id,pos){
+  const el=$(id)?.children[pos];
+  if(!el)return null;
+  const r=el.getBoundingClientRect();
+  return {x:r.left+r.width/2,y:r.top+r.height/2};
+ },
+ cor(h){
+  const t=tipoNormalizado(h?.tipo_dano||h?.tipo||h?.elemento||h?.nome||'');
+  if(/gelo|frio|neve/.test(t))return '#8deaff';
+  if(/fogo|lava|magma|vulc/.test(t))return '#ff752c';
+  if(/agua|mar|onda/.test(t))return '#4caaff';
+  if(/vento|ar|tufao/.test(t))return '#c7ffe9';
+  if(/raio|eletr|trovao/.test(t))return '#f8e665';
+  if(/terra|pedra|rocha/.test(t))return '#c6a26a';
+  if(/natureza|veneno/.test(t))return '#78ed7d';
+  if(/sombra|treva/.test(t))return '#bd84ff';
+  if(/luz|radiant/.test(t))return '#fff0a0';
+  if(habilidadeCura(h))return '#6dff9e';
+  return '#f6e3db';
+ },
+ objeto(classe,x,y,cor,tempo=900){
+  const e=criar('div',classe);
+  e.style.setProperty('--x',x+'px');e.style.setProperty('--y',y+'px');
+  e.style.setProperty('--cor',cor);
+  this.iniciar().appendChild(e);
+  setTimeout(()=>e.remove(),tempo);
+  return e;
+ },
+ explosao(x,y,cor,quantidade=16){
+  for(let i=0;i<quantidade;i++){
+   const p=this.objeto('fx-particula',x,y,cor);
+   const ang=(Math.PI*2*i/quantidade)+(Math.random()-.5)*.35;
+   const dist=25+Math.random()*85;
+   p.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+   p.style.setProperty('--dy',Math.sin(ang)*dist+'px');
+   p.style.setProperty('--giro',Math.round(Math.random()*360)+'deg');
+   p.style.setProperty('--t',(4+Math.random()*7)+'px');
+  }
+ },
+ animar(origem,destino,h,acertou=true,area=false){
+  if(!origem||!destino)return;
+  const cor=this.cor(h),tipo=tipoNormalizado(h?.tipo_dano||h?.tipo||h?.nome||'');
+  const elementoCura=habilidadeCura(h);
+  if(elementoCura){
+   this.objeto('fx-onda',destino.x,destino.y,cor);
+   this.explosao(destino.x,destino.y,cor,12);
+   return;
+  }
+  if(/cort|espada|garra|mordida|cauda|fisic|soco/.test(tipo)){
+   this.objeto('fx-corte',destino.x,destino.y,cor);
+   if(acertou)this.explosao(destino.x,destino.y,cor,area?20:10);
+  }else{
+   const p=this.objeto('fx-projetil',origem.x,origem.y,cor,520);
+   p.style.setProperty('--x1',origem.x+'px');p.style.setProperty('--y1',origem.y+'px');
+   p.style.setProperty('--x2',destino.x+'px');p.style.setProperty('--y2',destino.y+'px');
+   setTimeout(()=>{
+    if(acertou){this.objeto('fx-onda',destino.x,destino.y,cor);this.explosao(destino.x,destino.y,cor,area?24:15)}
+    else this.explosao(destino.x,destino.y,cor,5);
+   },430);
+  }
+  if(acertou&&area){
+   const flash=this.objeto('fx-tela',destino.x,destino.y,cor,400);
+   flash.style.setProperty('--cor',cor);
+  }
+ },
+ golpe(atacante,resultados,h,ladoAlvo){
+  const lado=aliados.includes(atacante)?'campo-jogador':'campo-inimigo';
+  const indice=aliados.includes(atacante)?aliados.indexOf(atacante):inimigos.indexOf(atacante);
+  const origem=this.centro(lado,indice);
+  const area=resultados.length>1;
+  const campo=ladoAlvo==='campo-inimigo'?inimigos:aliados;
+  for(const r of resultados){
+   // A posição é preservada antes da remoção das cartas derrotadas.
+   const pos=r.posicao;
+   const destino=this.centro(ladoAlvo,pos);
+   this.animar(origem,destino,h,r.acertou,area);
+   const el=$(ladoAlvo)?.children[pos];
+   if(el){
+    if(r.acertou){el.classList.remove('golpeado');void el.offsetWidth;el.classList.add('golpeado')}
+    efeitoFlutuante(ladoAlvo,pos,r.acertou?(r.dano>0?'-'+r.dano:'EFEITO'):'ERROU!',r.acertou?'':'erro');
+   }
+  }
+  const el=$(lado)?.children[indice];
+  if(el){el.classList.remove('atacando');void el.offsetWidth;el.classList.add('atacando')}
+ }
+};
+
 function executarGolpe(atacante,alvo,h,campoAlvo){
  if(!atacante||!alvo||!h)return [];
  const nome=h.nome||'Ataque';
@@ -317,11 +429,11 @@ function executarGolpe(atacante,alvo,h,campoAlvo){
  }
  const alvos=posicoesAfetadas(campoAlvo,alvo,h);
  const resultados=[];
- for(const {carta:vitima} of alvos){
+ for(const {carta:vitima,indice:posicao} of alvos){
   const precisaoFinal=chance(h,atacante,vitima);const acerto=Math.random()*100<precisaoFinal;
   if(!acerto){
    registrar(`❌ ${atacante.nome} errou ${nome} contra ${vitima.nome} (precisão efetiva: ${precisaoFinal.toFixed(1)}%).`);
-   resultados.push({alvo:vitima,dano:0,acertou:false});
+   resultados.push({alvo:vitima,dano:0,acertou:false,posicao});
    continue;
   }
   const {base,final,tipo,multTerreno,defesa}=danoCalculado(atacante,vitima,h);
@@ -334,7 +446,7 @@ function executarGolpe(atacante,alvo,h,campoAlvo){
    const destino=ehBenefico(String(ef.tipo||''))?atacante:vitima;
    if(destino.vidaAtual>0)aplicarEfeito(destino,ef,nome);
   }
-  resultados.push({alvo:vitima,dano:final,acertou:true});
+  resultados.push({alvo:vitima,dano:final,acertou:true,posicao});
  }
  // Exibir fragmentação antes de retirar as cartas do campo.
  removerMorto(campoAlvo);
@@ -350,10 +462,7 @@ function executarAtaque(indice){
  modoAtaque=false;atacanteSlot=null;habilidadeIndex=null;
  aviso(areaAdjacente(h)?'Ataque em área realizado: alvo e vizinhos atingidos.':'Ataque realizado.');
  verificarFim();atualizar();
- for(const r of resultados){
-  const pos=inimigos.indexOf(r.alvo);
-  if(pos>=0)animarGolpe(c,r.alvo,r.dano,r.acertou);
- }
+ FX.golpe(c,resultados,h,'campo-inimigo');
 }
 function aplicarPassivasEntrada(c,amigos,oponentes){
  for(const p of c.passivas){
@@ -424,11 +533,51 @@ function limparPassivasDeDerrotados(){
 function passarEfeitos(c){c.efeitos=c.efeitos.filter(e=>{if(e.passiva)return true;e.duracao--;return e.duracao>0})}
 function acaoInimiga(){const disponiveis=vivos(inimigos).filter(c=>c.entrada<rodada||rodada===1).sort((a,b)=>velocidade(b)-velocidade(a));for(const c of disponiveis){if(terminou)break;const alvos=vivos(aliados);if(!alvos.length)break;const alvo=alvos[sortear(0,alvos.length-1)];const ataques=c.ataques.filter(h=>h&&typeof h==='object');if(!ataques.length){registrar(`ℹ️ ${c.nome} não possui ataques cadastrados.`);continue}const h=ataques[sortear(0,ataques.length-1)];
  const destino=habilidadeCura(h)?vivos(inimigos).sort((a,b)=>a.vidaAtual/a.vidaMax-b.vidaAtual/b.vidaMax)[0]:alvo;
- executarGolpe(c,destino,h,aliados);verificarFim();}}
+ const resultados=executarGolpe(c,destino,h,aliados);if(habilidadeCura(h)){const id='campo-inimigo',pos=inimigos.indexOf(destino);if(pos>=0){const p=FX.centro(id,pos);FX.animar(p,p,h,true);}}else FX.golpe(c,resultados,h,'campo-jogador');verificarFim();}}
 function invocarInimigo(){if(rodada<2||vivos(inimigos).length>=4||!reservaInimiga.length||terminou)return;const i=inimigos.findIndex(c=>!c);const escolha=reservaInimiga.splice(sortear(0,reservaInimiga.length-1),1)[0];inimigos[i]=instancia(escolha,rodada);registrar(`🔴 O adversário invocou ${escolha.nome}.`);aplicarPassivasEntrada(inimigos[i],inimigos,aliados);aplicarAurasNaNovaCarta(inimigos[i],inimigos,aliados);}
 function verificarFim(){if(terminou)return;const jogadorSemCartas=!vivos(aliados).length&&!emReserva().length;const inimigoSemCartas=!vivos(inimigos).length&&!reservaInimiga.length;if(jogadorSemCartas||inimigoSemCartas){terminou=true;registrar(jogadorSemCartas&&inimigoSemCartas?'🤝 Empate!':inimigoSemCartas?'🏆 Vitória!':'💀 Derrota!');aviso('Combate encerrado. Atualize a página para testar outra batalha.');}}
 function encerrarRodada(){if(!iniciou||terminou)return;modoAtaque=false;modoInvocacao=false;atacanteSlot=null;habilidadeIndex=null;registrar(`⏭️ Você encerrou suas ações da rodada ${rodada}.`);acaoInimiga();verificarFim();if(terminou){atualizar();return}for(const c of [...vivos(aliados),...vivos(inimigos)])passarEfeitos(c);rodada++;invocarInimigo();iniciarRodada();}
-async function carregar(){try{const r=await fetch(`${API}/cartas`);if(!r.ok)throw Error(`HTTP ${r.status}`);const dados=await r.json();equipe=(dados.cartas||[]).slice(0,7).map(c=>({id:c.id,nome:c.nome||'Carta sem nome',imagem:c.imagem||'',vida:numero(c.vida,100),ataque:numero(c.ataque),defesa:numero(c.defesa),velocidade:numero(c.velocidade),ataques:listaHabilidades(c.ataques||c.habilidades),passivas:listaHabilidades(c.passivas)}));if(!equipe.length)aviso('Não há cartas no catálogo.');else aviso(`${equipe.length} cartas carregadas do PostgreSQL para testes.`);atualizar()}catch(e){aviso(`Erro ao carregar cartas: ${e.message}`)}}
-$('botao-pronto').onclick=confirmar;$('botao-adversario').onclick=simular;$('botao-invocar').onclick=ativarInvocacao;$('botao-atacar').onclick=ativarAtaque;$('botao-rodada').onclick=encerrarRodada;atualizar();desenharCenario();carregar();
+async function carregar(){
+  aviso('⏳ Carregando cartas do PostgreSQL...');
+  let erroAnterior=null;
+  for(let tentativa=1;tentativa<=3;tentativa++){
+    try{
+      const controlador=new AbortController();
+      const limite=setTimeout(()=>controlador.abort(),tentativa===1?18000:35000);
+      let resposta;
+      try{
+        resposta=await fetch(`${API}/cartas`,{signal:controlador.signal,cache:'no-store',headers:{Accept:'application/json'}});
+      }finally{clearTimeout(limite)}
+      if(!resposta.ok)throw Error(`API respondeu HTTP ${resposta.status}`);
+      const dados=await resposta.json();
+      const lista=Array.isArray(dados)?dados:Array.isArray(dados.cartas)?dados.cartas:Array.isArray(dados.data)?dados.data:null;
+      if(!lista)throw Error('A API não retornou uma lista de cartas.');
+      equipe=lista.slice(0,7).map((c,i)=>({
+        id:c.id??i+1,
+        nome:c.nome||'Carta sem nome',
+        imagem:c.imagem||c.imagem_url||'',
+        vida:numero(c.vida,100),
+        ataque:numero(c.ataque),
+        defesa:numero(c.defesa),
+        velocidade:numero(c.velocidade),
+        ataques:listaHabilidades(c.ataques||c.habilidades),
+        passivas:listaHabilidades(c.passivas||c.passiva)
+      }));
+      atualizar();
+      if(!equipe.length)aviso('⚠️ A API respondeu, mas não há cartas cadastradas.');
+      else aviso(`✅ ${equipe.length} cartas carregadas. Escolha sua carta inicial.`);
+      return;
+    }catch(erro){
+      erroAnterior=erro;
+      aviso(`⏳ Tentativa ${tentativa}/3: ${erro.name==='AbortError'?'servidor demorando para responder':erro.message}`);
+      if(tentativa<3)await new Promise(resolve=>setTimeout(resolve,2500));
+    }
+  }
+  aviso(`❌ Não foi possível carregar as cartas: ${erroAnterior?.message||'erro desconhecido'}. Confira se https://cards-minecraft.onrender.com/cartas abre normalmente e clique em Tentar novamente.`);
+  const botao=criar('button','','🔄 Tentar novamente');
+  botao.onclick=()=>{botao.remove();carregar()};
+  $('reserva').replaceChildren(botao);
+}
+$('botao-pronto').onclick=confirmar;$('botao-adversario').onclick=simular;$('botao-invocar').onclick=ativarInvocacao;$('botao-atacar').onclick=ativarAtaque;$('botao-rodada').onclick=encerrarRodada;try{atualizar();desenharCenario()}catch(erro){console.error('Erro ao iniciar arena:',erro);aviso('Erro de interface: '+erro.message)}carregar();
 </script>
 </body></html>
