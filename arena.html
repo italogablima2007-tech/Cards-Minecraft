@@ -1,0 +1,612 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arena | Reinos & Batalhas</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #0b1019;
+  color: #f2f4f8;
+  font-family: Arial, sans-serif;
+}
+
+.arena {
+  max-width: 1250px;
+  margin: auto;
+  padding: 25px;
+}
+
+.topo, .linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.campo, .painel {
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #39465a;
+  border-radius: 16px;
+  background: #141e2c;
+}
+
+.cartas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.espaco {
+  min-height: 155px;
+  border: 2px dashed #526078;
+  border-radius: 12px;
+  background: #101720;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  text-align: center;
+}
+
+.espaco.ocupado {
+  border-style: solid;
+  border-color: #658fd0;
+}
+
+.espaco img, .reserva img {
+  width: 100%;
+  max-height: 115px;
+  object-fit: contain;
+}
+
+.espaco strong {
+  font-size: 13px;
+}
+
+.espaco.selecionavel {
+  cursor: pointer;
+}
+
+.reserva {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill, minmax(135px, 1fr)
+  );
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.carta-reserva {
+  padding: 12px;
+  border: 1px solid #526078;
+  border-radius: 12px;
+  background: #1d2b3d;
+  color: white;
+  cursor: pointer;
+  text-align: center;
+}
+
+.carta-reserva.escolhida {
+  border: 2px solid #53c58b;
+  background: #244736;
+}
+
+.carta-reserva:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.carta-reserva img {
+  height: 115px;
+  object-fit: contain;
+}
+
+button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 9px;
+  background: #376dba;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.botao-pronto {
+  background: #258653;
+}
+
+.botao-teste {
+  background: #7453a8;
+}
+
+.terreno {
+  padding: 20px;
+  margin: 25px 0;
+  text-align: center;
+  border-radius: 12px;
+  background: #253247;
+}
+
+.aviso {
+  margin-top: 12px;
+  color: #c7d5eb;
+}
+
+.oculto {
+  font-size: 32px;
+}
+
+.status-carta {
+  font-size: 11px;
+  color: #9fb9e3;
+}
+
+@media(max-width:600px) {
+  .arena { padding: 12px; }
+  .campo, .painel { padding: 12px; }
+  .cartas { gap: 6px; }
+  .espaco { min-height: 125px; padding: 5px; }
+  .espaco img { max-height: 75px; }
+  .espaco strong { font-size: 10px; }
+}
+</style>
+</head>
+
+<body>
+<main class="arena">
+
+<header class="topo">
+  <div>
+    <p>⚔️ REINOS & BATALHAS</p>
+    <h1>Arena de Combate</h1>
+    <p>Invocação Progressiva</p>
+  </div>
+
+  <button onclick="history.back()">← Voltar</button>
+</header>
+
+<section class="painel">
+  <h2>📜 Preparação da Batalha</h2>
+
+  <p>
+    Escolha uma carta inicial secretamente.
+    Após os dois jogadores clicarem em Pronto,
+    as cartas serão reveladas.
+  </p>
+
+  <p>
+    Nas próximas rodadas, você poderá invocar
+    novas cartas até ocupar os quatro espaços.
+    Cartas em campo não podem ser trocadas.
+  </p>
+
+  <p id="status">Aguardando sua seleção.</p>
+</section>
+
+<section class="campo">
+
+  <h2>🔴 Campo do Adversário</h2>
+  <div class="cartas" id="campo-inimigo"></div>
+
+  <div class="terreno">
+    <h2 id="nome-terreno">Terreno desconhecido</h2>
+    <p id="efeito-terreno">
+      O terreno será revelado no início da batalha.
+    </p>
+  </div>
+
+  <h2>🔵 Seu Campo</h2>
+  <p id="instrucao-campo">
+    Clique em uma carta da reserva para
+    escolher sua carta inicial.
+  </p>
+
+  <div class="cartas" id="campo-jogador"></div>
+
+</section>
+
+<section class="painel">
+  <div class="linha">
+    <h2>🃏 Suas Cartas</h2>
+    <strong id="contador">0/1 carta inicial</strong>
+  </div>
+
+  <div class="reserva" id="reserva"></div>
+
+  <div class="linha" style="margin-top:20px">
+    <button
+      class="botao-pronto"
+      id="botao-pronto"
+      onclick="confirmarPronto()">
+      ✓ Pronto
+    </button>
+
+    <button
+      class="botao-teste"
+      id="botao-adversario"
+      onclick="simularAdversario()">
+      🧪 Simular adversário pronto
+    </button>
+  </div>
+
+  <p class="aviso" id="mensagem"></p>
+</section>
+
+<section class="painel">
+  <h2>📜 Histórico de Combate</h2>
+  <div id="historico">
+    Aguardando preparação...
+  </div>
+</section>
+
+</main>
+
+<script>
+const API = "https://cards-minecraft.onrender.com";
+
+const terrenos = [
+  {
+    nome: "🌨️ Tundra Congelada",
+    efeito: "Gelo +10% | Frio +5% | Fogo -5%"
+  },
+  {
+    nome: "🌋 Vulcão",
+    efeito: "Fogo +10%"
+  },
+  {
+    nome: "🌲 Floresta Ancestral",
+    efeito: "Natureza +5%"
+  },
+  {
+    nome: "🏜️ Deserto Escaldante",
+    efeito: "Fogo +5% | Frio -5%"
+  },
+  {
+    nome: "🌊 Costa Tempestuosa",
+    efeito: "Água +5%"
+  },
+  {
+    nome: "🏛️ Ruínas Antigas",
+    efeito: "Mágico +5%"
+  },
+  {
+    nome: "🌑 Abismo",
+    efeito: "Sombras +5% | Luz -5%"
+  },
+  {
+    nome: "⚔️ Campo de Batalha",
+    efeito: "Físico +5%"
+  }
+];
+
+let catalogo = [];
+let equipe = [];
+
+let cartaInicial = null;
+let cartasJogador = [];
+let cartasInimigo = [];
+
+let jogadorPronto = false;
+let adversarioPronto = false;
+let batalhaIniciada = false;
+
+let rodada = 0;
+
+const campoJogador =
+  document.getElementById("campo-jogador");
+
+const campoInimigo =
+  document.getElementById("campo-inimigo");
+
+const reserva =
+  document.getElementById("reserva");
+
+function criarElemento(tag, classe, texto) {
+  const elemento = document.createElement(tag);
+
+  if (classe) elemento.className = classe;
+  if (texto) elemento.textContent = texto;
+
+  return elemento;
+}
+
+function mostrarCarta(container, carta) {
+  if (carta.imagem) {
+    const imagem = criarElemento("img");
+    imagem.src = carta.imagem;
+    imagem.alt = carta.nome;
+    imagem.onerror = () => imagem.remove();
+    container.appendChild(imagem);
+  }
+
+  const nome = criarElemento(
+    "strong", "", carta.nome
+  );
+
+  container.appendChild(nome);
+}
+
+function renderizarCampos() {
+  campoJogador.replaceChildren();
+  campoInimigo.replaceChildren();
+
+  for (let i = 0; i < 4; i++) {
+    const espacoJogador =
+      criarElemento("div", "espaco");
+
+    let cartaJogador = null;
+
+    if (batalhaIniciada) {
+      cartaJogador = cartasJogador[i] || null;
+    } else if (i === 0) {
+      cartaJogador = cartaInicial;
+    }
+
+    if (cartaJogador) {
+      espacoJogador.classList.add("ocupado");
+      mostrarCarta(espacoJogador, cartaJogador);
+
+      if (!jogadorPronto && !batalhaIniciada) {
+        espacoJogador.classList.add("selecionavel");
+        espacoJogador.title = "Remover escolha inicial";
+        espacoJogador.onclick = removerCartaInicial;
+      }
+    } else {
+      espacoJogador.textContent = "＋";
+    }
+
+    campoJogador.appendChild(espacoJogador);
+
+    const espacoInimigo =
+      criarElemento("div", "espaco");
+
+    if (!batalhaIniciada) {
+      const cadeado = criarElemento(
+        "span", "oculto", "🔒"
+      );
+      espacoInimigo.appendChild(cadeado);
+    } else {
+      const cartaInimiga =
+        cartasInimigo[i] || null;
+
+      if (cartaInimiga) {
+        espacoInimigo.classList.add("ocupado");
+        mostrarCarta(espacoInimigo, cartaInimiga);
+      } else {
+        espacoInimigo.textContent = "＋";
+      }
+    }
+
+    campoInimigo.appendChild(espacoInimigo);
+  }
+
+  document.getElementById("contador").textContent =
+    batalhaIniciada
+      ? `${cartasJogador.filter(Boolean).length}/4 em campo`
+      : `${cartaInicial ? 1 : 0}/1 carta inicial`;
+}
+
+function renderizarReserva() {
+  reserva.replaceChildren();
+
+  equipe.forEach(carta => {
+    const botao = criarElemento(
+      "button", "carta-reserva"
+    );
+
+    mostrarCarta(botao, carta);
+
+    const escolhida =
+      cartaInicial?.id === carta.id;
+
+    if (escolhida && !batalhaIniciada) {
+      botao.classList.add("escolhida");
+    }
+
+    botao.disabled =
+      jogadorPronto || batalhaIniciada;
+
+    botao.onclick = () =>
+      selecionarCartaInicial(carta);
+
+    reserva.appendChild(botao);
+  });
+}
+
+function selecionarCartaInicial(carta) {
+  if (jogadorPronto || batalhaIniciada) return;
+
+  // Só existe uma escolha inicial.
+  // Outra escolha substitui a anterior.
+  cartaInicial = carta;
+
+  renderizarCampos();
+  renderizarReserva();
+
+  document.getElementById("mensagem").textContent =
+    `${carta.nome} selecionada como carta inicial.`;
+}
+
+function removerCartaInicial() {
+  if (jogadorPronto || batalhaIniciada) return;
+
+  cartaInicial = null;
+
+  renderizarCampos();
+  renderizarReserva();
+
+  document.getElementById("mensagem").textContent =
+    "Escolha inicial removida.";
+}
+
+function atualizarStatus() {
+  const status = document.getElementById("status");
+
+  if (batalhaIniciada) {
+    status.textContent =
+      `⚔️ Rodada ${rodada} — Batalha iniciada!`;
+  } else if (jogadorPronto) {
+    status.textContent =
+      "🔒 Você está pronto. Aguardando adversário...";
+  } else {
+    status.textContent =
+      "🃏 Escolha uma carta inicial.";
+  }
+}
+
+function confirmarPronto() {
+  if (jogadorPronto || batalhaIniciada) return;
+
+  if (!cartaInicial) {
+    document.getElementById("mensagem").textContent =
+      "Selecione uma carta inicial antes de confirmar.";
+    return;
+  }
+
+  jogadorPronto = true;
+
+  document.getElementById("botao-pronto").disabled =
+    true;
+
+  document.getElementById("mensagem").textContent =
+    "Sua carta inicial foi confirmada e bloqueada.";
+
+  renderizarCampos();
+  renderizarReserva();
+  atualizarStatus();
+  verificarInicio();
+}
+
+function simularAdversario() {
+  if (adversarioPronto || batalhaIniciada) return;
+
+  adversarioPronto = true;
+
+  document.getElementById(
+    "botao-adversario"
+  ).disabled = true;
+
+  document.getElementById("mensagem").textContent =
+    "O adversário confirmou sua carta inicial.";
+
+  verificarInicio();
+}
+
+function verificarInicio() {
+  if (batalhaIniciada) return;
+
+  if (!jogadorPronto || !adversarioPronto) {
+    return;
+  }
+
+  batalhaIniciada = true;
+  rodada = 1;
+
+  cartasJogador = [cartaInicial, null, null, null];
+
+  // Adversário de teste:
+  // utiliza uma carta diferente quando possível.
+  const candidatos = equipe.filter(
+    carta => carta.id !== cartaInicial.id
+  );
+
+  const cartaAdversaria =
+    candidatos[Math.floor(
+      Math.random() * candidatos.length
+    )] || equipe[0];
+
+  cartasInimigo = [
+    cartaAdversaria || null,
+    null,
+    null,
+    null
+  ];
+
+  const terreno = terrenos[
+    Math.floor(Math.random() * terrenos.length)
+  ];
+
+  document.getElementById("nome-terreno").textContent =
+    terreno.nome;
+
+  document.getElementById("efeito-terreno").textContent =
+    terreno.efeito;
+
+  document.getElementById("historico").textContent =
+    "⚔️ Ambos os jogadores estão prontos! " +
+    "Cartas iniciais reveladas. " +
+    "Terreno sorteado: " + terreno.nome;
+
+  document.getElementById("mensagem").textContent =
+    "As cartas iniciais foram reveladas!";
+
+  document.getElementById("instrucao-campo").textContent =
+    "Cartas em campo não podem ser trocadas.";
+
+  renderizarCampos();
+  renderizarReserva();
+  atualizarStatus();
+}
+
+async function carregarCartas() {
+  try {
+    const resposta = await fetch(`${API}/cartas`);
+
+    if (!resposta.ok) {
+      throw new Error("Erro ao buscar cartas.");
+    }
+
+    const dados = await resposta.json();
+
+    catalogo = (dados.cartas || []).map(carta => ({
+      id: carta.id,
+      nome: carta.nome,
+      imagem: carta.imagem,
+      vida: carta.vida,
+      ataque: carta.ataque,
+      defesa: carta.defesa,
+      velocidade: carta.velocidade
+    }));
+
+    // Equipe temporária para testar a interface.
+    // Depois usaremos o inventário real do jogador.
+    equipe = catalogo.slice(0, 7);
+
+    renderizarReserva();
+    renderizarCampos();
+    atualizarStatus();
+
+    if (equipe.length === 0) {
+      document.getElementById("mensagem").textContent =
+        "Nenhuma carta disponível para teste.";
+    }
+
+  } catch (erro) {
+    document.getElementById("mensagem").textContent =
+      "Não foi possível carregar as cartas: " +
+      erro.message;
+  }
+}
+
+carregarCartas();
+</script>
+
+</body>
+</html>
