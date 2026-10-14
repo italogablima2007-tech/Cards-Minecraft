@@ -177,13 +177,39 @@ async function sair() {
 // CARTAS
 // ==================================================
 
-async function listarCartas() {
-  const resultado = await getDocs(collection(db, "cartas"));
 
-  return resultado.docs
-    .map(documento => documento.data())
-    .sort((a, b) => Number(a.id) - Number(b.id));
+async function listarCartas() {
+  const resposta = await fetch(
+    "https://cards-minecraft.onrender.com/cartas"
+  );
+
+  if (!resposta.ok) {
+    throw new Error(
+      "Erro ao carregar cartas do servidor."
+    );
+  }
+
+  const dados = await resposta.json();
+
+  if (!Array.isArray(dados.cartas)) {
+    throw new Error(
+      "O servidor retornou um catálogo inválido."
+    );
+  }
+
+  return dados.cartas
+    .map(carta => ({
+      ...carta,
+
+      // Preserva o ID usado pelo Firebase
+      id: Number(carta.firebase_id),
+
+      // Guarda o ID interno do PostgreSQL
+      postgres_id: carta.id
+    }))
+    .sort((a, b) => a.id - b.id);
 }
+
 
 async function salvarCarta(carta) {
   const usuario = await perfil();
