@@ -65,8 +65,11 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
     same_site="lax",
-    https_only=True
+    https_only=True,
+    session_cookie="reinos_batalhas_session",
+    max_age=3600
 )
+
 
 app.include_router(discord_router)
 
