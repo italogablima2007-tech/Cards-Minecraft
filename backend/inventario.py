@@ -37,17 +37,21 @@ def meu_inventario(
         cartas.append({
             "inventario_id": item.id,
             "carta_id": carta.id,
+            "firebase_id": carta.firebase_id,
             "nome": carta.nome,
             "raridade": carta.raridade,
             "classe": carta.classe,
-            "reino": carta.reino,
+            "reino_carta": carta.reino,
+            "reino_inventario": item.reino,
+            "quantidade": item.quantidade,
             "nivel": item.nivel,
             "xp": item.xp,
+            "ultimo_treino": item.ultimo_treino,
             "imagem": carta.imagem
         })
 
     return {
         "jogador_id": jogador_id,
-        "total": len(cartas),
+        "total": sum(item["quantidade"] or 0 for item in cartas),
         "cartas": cartas
     }
