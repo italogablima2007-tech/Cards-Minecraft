@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI, Depends
+from pvp import router as pvp_router
 from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import text, inspect
@@ -18,6 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 # ==================================================
 
 app = FastAPI(title="Reinos & Batalhas API")
+app.include_router(pvp_router)
 
 
 # ==================================================
