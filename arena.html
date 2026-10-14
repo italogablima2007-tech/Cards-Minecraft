@@ -1,694 +1,80 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arena | Reinos & Batalhas</title>
 <link rel="stylesheet" href="style.css">
-
 <style>
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background: #0b1019;
-  color: #f2f4f8;
-  font-family: Arial, sans-serif;
-}
-
-.arena {
-  max-width: 1250px;
-  margin: auto;
-  padding: 24px;
-}
-
-.topo, .linha {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.painel, .campo {
-  background: #141e2c;
-  border: 1px solid #39465a;
-  border-radius: 16px;
-  padding: 20px;
-  margin-top: 20px;
-}
-
-.cartas {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 15px;
-}
-
-.espaco {
-  min-height: 170px;
-  border: 2px dashed #526078;
-  border-radius: 12px;
-  background: #101720;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  text-align: center;
-}
-
-.espaco.ocupado {
-  border-style: solid;
-  border-color: #658fd0;
-}
-
-.espaco img {
-  width: 100%;
-  max-height: 115px;
-  object-fit: contain;
-}
-
-.espaco strong {
-  font-size: 13px;
-}
-
-.espaco.selecionavel {
-  cursor: pointer;
-}
-
-.reserva {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-  gap: 12px;
-  margin-top: 15px;
-}
-
-.carta-reserva {
-  padding: 12px;
-  border: 1px solid #526078;
-  border-radius: 12px;
-  background: #1d2b3d;
-  color: white;
-  cursor: pointer;
-  text-align: center;
-}
-
-.carta-reserva img {
-  width: 100%;
-  height: 115px;
-  object-fit: contain;
-}
-
-.carta-reserva.escolhida {
-  border: 2px solid #53c58b;
-  background: #244736;
-}
-
-button {
-  padding: 12px 18px;
-  border: 0;
-  border-radius: 9px;
-  background: #376dba;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
-}
-
-.botao-pronto { background: #258653; }
-.botao-teste { background: #7453a8; }
-.botao-rodada { background: #a56a26; }
-
-.terreno {
-  background: #253247;
-  padding: 20px;
-  margin: 25px 0;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.aviso {
-  color: #c7d5eb;
-  margin-top: 12px;
-}
-
-.status-carta {
-  font-size: 11px;
-  color: #9fb9e3;
-}
-
-.oculto { font-size: 32px; }
-
-.acoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-#historico p {
-  margin: 8px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #2e3b4d;
-}
-
-@media(max-width:600px) {
-  .arena { padding: 12px; }
-  .painel, .campo { padding: 12px; }
-  .cartas { gap: 6px; }
-  .espaco { min-height: 125px; padding: 5px; }
-  .espaco img { max-height: 75px; }
-  .espaco strong { font-size: 10px; }
-}
+*{box-sizing:border-box}body{margin:0;background:#0b1019;color:#f2f4f8;font-family:Arial,sans-serif}button{border:0;border-radius:9px;padding:11px 15px;background:#376dba;color:white;font-weight:700;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.arena{max-width:1260px;margin:auto;padding:22px}.topo,.linha,.acoes{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.painel,.campo{background:#141e2c;border:1px solid #39465a;border-radius:16px;padding:19px;margin-top:18px}.campo{background:linear-gradient(150deg,#18283b,#101820)}.cartas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 22px}.espaco{min-height:188px;border:2px dashed #526078;border-radius:12px;background:#101720;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;padding:9px;text-align:center;position:relative}.espaco.ocupado{border-style:solid;border-color:#658fd0}.espaco.alvo{border-color:#f59e56;cursor:pointer;box-shadow:0 0 12px #ff9c4440}.espaco img{width:100%;height:100px;object-fit:contain}.espaco strong{font-size:13px}.espaco small{font-size:11px;color:#c2d1e9}.vida{width:100%;height:9px;border-radius:20px;background:#642b34;overflow:hidden}.vida>div{height:100%;background:#46b978;transition:width .3s}.reserva{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px}.reserva button{background:#1d2b3d;border:1px solid #526078;min-height:150px}.reserva img{height:90px;width:100%;object-fit:contain}.reserva strong{display:block}.reserva .escolhida{border-color:#53c58b;background:#244736}.terreno{background:#253247;padding:16px;border-radius:12px;text-align:center;margin:20px 0}.acoes{justify-content:flex-start;margin-top:16px}.verde{background:#258653}.roxo{background:#7453a8}.laranja{background:#a56a26}.habilidades{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.habilidades button{background:#405b83}.habilidades button.ativo{outline:2px solid #eab96b}.aviso{color:#c7d5eb;min-height:24px}.status{color:#b6c6dc;font-size:12px}.oculto{font-size:32px}.selecionavel{cursor:pointer}.historico{max-height:280px;overflow-y:auto}.historico p{padding:8px 0;margin:0;border-bottom:1px solid #2e3b4d}.marcador{font-size:12px;color:#ffd38a}.ficha{font-size:11px;color:#d2d9e5}.destaque{outline:2px solid #53c58b}.rodada{color:#ffda9a}[hidden]{display:none!important}@media(max-width:650px){.arena{padding:10px}.painel,.campo{padding:11px}.cartas{gap:5px}.espaco{min-height:145px;padding:4px}.espaco img{height:62px}.espaco strong{font-size:10px}.espaco small,.ficha{font-size:9px}}
 </style>
 </head>
-
-<body>
-<main class="arena">
-
-<header class="topo">
-  <div>
-    <p>⚔️ REINOS & BATALHAS</p>
-    <h1>Arena de Combate</h1>
-    <p>Invocação Progressiva</p>
-  </div>
-
-  <button onclick="history.back()">← Voltar</button>
-</header>
-
-<section class="painel">
-  <div class="linha">
-    <h2 id="titulo-fase">📜 Preparação Secreta</h2>
-    <strong id="indicador-rodada">Preparação</strong>
-  </div>
-
-  <p id="status">
-    Escolha uma carta inicial. O adversário
-    não verá sua escolha até ambos confirmarem.
-  </p>
-</section>
-
-<section class="campo">
-
-  <h2>🔴 Campo do Adversário</h2>
-  <div class="cartas" id="campo-inimigo"></div>
-
-  <div class="terreno">
-    <h2 id="nome-terreno">Terreno desconhecido</h2>
-    <p id="efeito-terreno">
-      Revelado após os dois jogadores ficarem prontos.
-    </p>
-  </div>
-
-  <h2>🔵 Seu Campo</h2>
-  <p id="instrucao-campo">
-    Selecione uma carta inicial da reserva.
-  </p>
-
-  <div class="cartas" id="campo-jogador"></div>
-
-</section>
-
-<section class="painel">
-  <div class="linha">
-    <h2>🃏 Reserva</h2>
-    <strong id="contador">0/1 carta inicial</strong>
-  </div>
-
-  <p id="instrucao-reserva">
-    Clique em uma carta para selecioná-la.
-  </p>
-
-  <div class="reserva" id="reserva"></div>
-
-  <div class="acoes" id="acoes-preparacao">
-    <button class="botao-pronto"
-      id="botao-pronto" onclick="confirmarPronto()">
-      ✓ Pronto
-    </button>
-
-    <button class="botao-teste"
-      id="botao-adversario" onclick="simularAdversario()">
-      🧪 Simular adversário pronto
-    </button>
-  </div>
-
-  <div class="acoes" id="acoes-combate" hidden>
-    <button id="botao-invocar"
-      onclick="ativarInvocacao()">
-      ✨ Invocar Carta
-    </button>
-
-    <button class="botao-rodada"
-      id="botao-rodada" onclick="encerrarRodada()">
-      ⏭️ Encerrar Rodada
-    </button>
-  </div>
-
-  <p class="aviso" id="mensagem"></p>
-</section>
-
-<section class="painel">
-  <h2>📜 Histórico de Combate</h2>
-  <div id="historico">
-    <p>Aguardando preparação...</p>
-  </div>
-</section>
-
+<body><main class="arena">
+<header class="topo"><div><p>⚔️ REINOS & BATALHAS</p><h1>Arena de Combate</h1><p>Invocação Progressiva • Simulação contra computador</p></div><button onclick="history.back()">← Voltar</button></header>
+<section class="painel"><div class="linha"><h2 id="titulo-fase">📜 Preparação Secreta</h2><strong id="indicador-rodada">Preparação</strong></div><p id="status">Escolha exatamente uma carta inicial. Ela será revelada quando ambos estiverem prontos.</p></section>
+<section class="campo"><h2>🔴 Campo do Adversário</h2><div class="cartas" id="campo-inimigo"></div><div class="terreno"><h2 id="nome-terreno">Terreno desconhecido</h2><p id="efeito-terreno">Revelado no início da batalha.</p></div><h2>🔵 Seu Campo</h2><p id="instrucao-campo">Escolha uma carta inicial da reserva.</p><div class="cartas" id="campo-jogador"></div></section>
+<section class="painel"><div class="linha"><h2>🃏 Reserva</h2><strong id="contador">0/1 carta inicial</strong></div><p id="instrucao-reserva">Clique na carta que deseja começar usando.</p><div class="reserva" id="reserva"></div><div class="acoes" id="acoes-preparacao"><button class="verde" id="botao-pronto">✓ Pronto</button><button class="roxo" id="botao-adversario">🧪 Simular adversário pronto</button></div><div id="acoes-combate" hidden><div class="acoes"><button id="botao-invocar">✨ Invocar Carta</button><button id="botao-atacar">⚔️ Atacar</button><button class="laranja" id="botao-rodada">⏭️ Encerrar Rodada</button></div><p class="status" id="orientacao-ataque">Escolha uma carta aliada para atacar.</p><div id="painel-habilidades" hidden><h3 id="nome-atacante">Habilidades</h3><div class="habilidades" id="habilidades"></div><p class="status">Escolha uma habilidade e clique em um inimigo destacado.</p></div></div><p class="aviso" id="mensagem" role="status"></p></section>
+<section class="painel"><h2>📜 Histórico de Combate</h2><div class="historico" id="historico"><p>Aguardando preparação...</p></div></section>
 </main>
-
 <script>
-const API = "https://cards-minecraft.onrender.com";
-
-const terrenos = [
-  { nome: "🌨️ Tundra Congelada", efeito: "Gelo +10% | Frio +5% | Fogo -5%" },
-  { nome: "🌋 Vulcão", efeito: "Fogo +10%" },
-  { nome: "🌲 Floresta Ancestral", efeito: "Natureza +5%" },
-  { nome: "🏜️ Deserto Escaldante", efeito: "Fogo +5% | Frio -5%" },
-  { nome: "🌊 Costa Tempestuosa", efeito: "Água +5%" },
-  { nome: "🏛️ Ruínas Antigas", efeito: "Mágico +5%" },
-  { nome: "🌑 Abismo", efeito: "Sombras +5% | Luz -5%" },
-  { nome: "⚔️ Campo de Batalha", efeito: "Físico +5%" }
+'use strict';
+const API='https://cards-minecraft.onrender.com';
+const $=id=>document.getElementById(id);
+const terrenos=[
+ {nome:'🌨️ Tundra Congelada',mod:{Frio:1.05,Fogo:.95,Gelo:1.10}},
+ {nome:'🌲 Floresta Ancestral',mod:{Natureza:1.05}},
+ {nome:'🏜️ Deserto Escaldante',mod:{Fogo:1.05,Frio:.95}},
+ {nome:'🌋 Vulcão',mod:{Fogo:1.10}},
+ {nome:'🌊 Costa Tempestuosa',mod:{Água:1.05}},
+ {nome:'🏛️ Ruínas Antigas',mod:{Mágico:1.05}},
+ {nome:'🌑 Abismo',mod:{Sombras:1.05,Luz:.95}},
+ {nome:'⚔️ Campo de Batalha',mod:{Físico:1.05}}
 ];
-
-let equipe = [];
-let cartaInicial = null;
-
-let cartasJogador = Array(4).fill(null);
-let cartasInimigo = Array(4).fill(null);
-
-let jogadorPronto = false;
-let adversarioPronto = false;
-let batalhaIniciada = false;
-
-let rodada = 0;
-let invocacaoUsada = false;
-let modoInvocacao = false;
-
-const $ = id => document.getElementById(id);
-
-function elemento(tag, classe, texto) {
-  const el = document.createElement(tag);
-  if (classe) el.className = classe;
-  if (texto !== undefined) el.textContent = texto;
-  return el;
-}
-
-function mostrarCarta(container, carta) {
-  if (carta.imagem) {
-    const img = elemento("img");
-    img.src = carta.imagem;
-    img.alt = carta.nome;
-    img.onerror = () => img.remove();
-    container.appendChild(img);
-  }
-
-  container.appendChild(
-    elemento("strong", "", carta.nome)
-  );
-
-  if (batalhaIniciada) {
-    const situacao = carta.rodadaEntrada === rodada
-      && rodada > 1
-      ? "⏳ Aguardando próxima rodada"
-      : "⚔️ Pronta para agir";
-
-    container.appendChild(
-      elemento("small", "status-carta", situacao)
-    );
-  }
-}
-
-function registrar(texto) {
-  const historico = $("historico");
-
-  const primeiraMensagem =
-    historico.textContent.trim() ===
-    "Aguardando preparação...";
-
-  if (primeiraMensagem) {
-    historico.replaceChildren();
-  }
-
-  const linha = elemento("p", "", texto);
-  historico.prepend(linha);
-}
-
-function cartasEmCampo() {
-  return cartasJogador.filter(Boolean);
-}
-
-function cartasDisponiveis() {
-  const idsEmCampo = cartasEmCampo().map(c => c.id);
-
-  return equipe.filter(
-    carta => !idsEmCampo.includes(carta.id)
-  );
-}
-
-function renderizarCampos() {
-  $("campo-jogador").replaceChildren();
-  $("campo-inimigo").replaceChildren();
-
-  for (let i = 0; i < 4; i++) {
-    const espacoJogador = elemento("div", "espaco");
-
-    const carta = batalhaIniciada
-      ? cartasJogador[i]
-      : (i === 0 ? cartaInicial : null);
-
-    if (carta) {
-      espacoJogador.classList.add("ocupado");
-      mostrarCarta(espacoJogador, carta);
-
-      if (!jogadorPronto && !batalhaIniciada) {
-        espacoJogador.classList.add("selecionavel");
-        espacoJogador.title = "Remover escolha";
-        espacoJogador.onclick = removerCartaInicial;
-      }
-    } else {
-      espacoJogador.textContent = "＋";
-    }
-
-    $("campo-jogador").appendChild(espacoJogador);
-
-    const espacoInimigo = elemento("div", "espaco");
-
-    if (!batalhaIniciada) {
-      espacoInimigo.appendChild(
-        elemento("span", "oculto", "🔒")
-      );
-    } else if (cartasInimigo[i]) {
-      espacoInimigo.classList.add("ocupado");
-      mostrarCarta(espacoInimigo, cartasInimigo[i]);
-    } else {
-      espacoInimigo.textContent = "＋";
-    }
-
-    $("campo-inimigo").appendChild(espacoInimigo);
-  }
-
-  $("contador").textContent = batalhaIniciada
-    ? `${cartasEmCampo().length}/4 em campo`
-    : `${cartaInicial ? 1 : 0}/1 carta inicial`;
-}
-
-function renderizarReserva() {
-  $("reserva").replaceChildren();
-
-  const cartas = batalhaIniciada
-    ? cartasDisponiveis()
-    : equipe;
-
-  cartas.forEach(carta => {
-    const botao = elemento(
-      "button", "carta-reserva"
-    );
-
-    mostrarCarta(botao, carta);
-
-    if (!batalhaIniciada) {
-      const escolhida =
-        cartaInicial?.id === carta.id;
-
-      if (escolhida) {
-        botao.classList.add("escolhida");
-      }
-
-      botao.disabled = jogadorPronto;
-      botao.onclick = () => escolherInicial(carta);
-    } else {
-      botao.disabled = !modoInvocacao;
-      botao.onclick = () => invocarCarta(carta);
-    }
-
-    $("reserva").appendChild(botao);
-  });
-
-  if (cartas.length === 0) {
-    $("reserva").appendChild(
-      elemento("p", "", "Nenhuma carta disponível.")
-    );
-  }
-}
-
-function escolherInicial(carta) {
-  if (jogadorPronto || batalhaIniciada) return;
-
-  cartaInicial = carta;
-
-  renderizarCampos();
-  renderizarReserva();
-
-  $("mensagem").textContent =
-    `${carta.nome} selecionada como carta inicial.`;
-}
-
-function removerCartaInicial() {
-  if (jogadorPronto || batalhaIniciada) return;
-
-  cartaInicial = null;
-
-  renderizarCampos();
-  renderizarReserva();
-
-  $("mensagem").textContent =
-    "Escolha inicial removida.";
-}
-
-function confirmarPronto() {
-  if (jogadorPronto || batalhaIniciada) return;
-
-  if (!cartaInicial) {
-    $("mensagem").textContent =
-      "Selecione uma carta inicial.";
-    return;
-  }
-
-  jogadorPronto = true;
-  $("botao-pronto").disabled = true;
-
-  $("mensagem").textContent =
-    "Sua carta foi confirmada. Aguardando adversário...";
-
-  renderizarCampos();
-  renderizarReserva();
-  verificarInicio();
-}
-
-function simularAdversario() {
-  if (adversarioPronto || batalhaIniciada) return;
-
-  adversarioPronto = true;
-  $("botao-adversario").disabled = true;
-
-  $("mensagem").textContent =
-    "Adversário pronto!";
-
-  verificarInicio();
-}
-
-function verificarInicio() {
-  if (batalhaIniciada) return;
-  if (!jogadorPronto || !adversarioPronto) return;
-
-  batalhaIniciada = true;
-  rodada = 1;
-
-  cartasJogador[0] = {
-    ...cartaInicial,
-    rodadaEntrada: 1
-  };
-
-  const candidatos = equipe.filter(
-    carta => carta.id !== cartaInicial.id
-  );
-
-  const cartaAdversaria =
-    candidatos[Math.floor(
-      Math.random() * candidatos.length
-    )] || equipe[0];
-
-  cartasInimigo[0] = {
-    ...cartaAdversaria,
-    rodadaEntrada: 1
-  };
-
-  const terreno = terrenos[
-    Math.floor(Math.random() * terrenos.length)
-  ];
-
-  $("nome-terreno").textContent = terreno.nome;
-  $("efeito-terreno").textContent = terreno.efeito;
-
-  $("titulo-fase").textContent = "⚔️ Batalha";
-  $("acoes-preparacao").hidden = true;
-  $("acoes-combate").hidden = false;
-
-  $("instrucao-campo").textContent =
-    "Cartas em campo não podem ser trocadas.";
-
-  registrar(
-    `⚔️ Batalha iniciada! Terreno: ${terreno.nome}`
-  );
-
-  atualizarInterface();
-}
-
-function ativarInvocacao() {
-  if (!batalhaIniciada) return;
-
-  if (rodada === 1) {
-    $("mensagem").textContent =
-      "Novas invocações são liberadas na rodada 2.";
-    return;
-  }
-
-  if (invocacaoUsada) {
-    $("mensagem").textContent =
-      "Você já invocou uma carta nesta rodada.";
-    return;
-  }
-
-  if (cartasEmCampo().length >= 4) {
-    $("mensagem").textContent =
-      "Seu campo já está cheio.";
-    return;
-  }
-
-  if (cartasDisponiveis().length === 0) {
-    $("mensagem").textContent =
-      "Você não possui cartas na reserva.";
-    return;
-  }
-
-  modoInvocacao = !modoInvocacao;
-
-  $("mensagem").textContent = modoInvocacao
-    ? "Escolha uma carta da reserva para invocar."
-    : "Invocação cancelada.";
-
-  renderizarReserva();
-}
-
-function invocarCarta(carta) {
-  if (!batalhaIniciada || !modoInvocacao) return;
-  if (rodada < 2 || invocacaoUsada) return;
-
-  const posicao = cartasJogador.findIndex(
-    slot => slot === null
-  );
-
-  if (posicao === -1) return;
-
-  const disponivel = cartasDisponiveis().some(
-    disponivel => disponivel.id === carta.id
-  );
-
-  if (!disponivel) return;
-
-  cartasJogador[posicao] = {
-    ...carta,
-    rodadaEntrada: rodada
-  };
-
-  invocacaoUsada = true;
-  modoInvocacao = false;
-
-  registrar(
-    `✨ Rodada ${rodada}: ${carta.nome} foi invocada!`
-  );
-
-  $("mensagem").textContent =
-    `${carta.nome} entrou no campo e poderá agir na próxima rodada.`;
-
-  atualizarInterface();
-}
-
-function encerrarRodada() {
-  if (!batalhaIniciada) return;
-
-  registrar(`⏭️ Rodada ${rodada} encerrada.`);
-
-  rodada++;
-  invocacaoUsada = false;
-  modoInvocacao = false;
-
-  registrar(`⚔️ Rodada ${rodada} iniciada.`);
-
-  $("mensagem").textContent =
-    "Nova rodada! Você pode invocar uma carta.";
-
-  atualizarInterface();
-}
-
-function atualizarInterface() {
-  $("indicador-rodada").textContent =
-    batalhaIniciada
-      ? `Rodada ${rodada}`
-      : "Preparação";
-
-  $("status").textContent = batalhaIniciada
-    ? `Rodada ${rodada}: ${cartasEmCampo().length} carta(s) em campo.`
-    : jogadorPronto
-      ? "🔒 Aguardando adversário..."
-      : "Escolha uma carta inicial.";
-
-  $("botao-invocar").disabled =
-    !batalhaIniciada ||
-    rodada < 2 ||
-    invocacaoUsada ||
-    cartasEmCampo().length >= 4 ||
-    cartasDisponiveis().length === 0;
-
-  renderizarCampos();
-  renderizarReserva();
-}
-
-async function carregarCartas() {
-  try {
-    const resposta = await fetch(`${API}/cartas`);
-
-    if (!resposta.ok) {
-      throw new Error("Erro ao buscar cartas.");
-    }
-
-    const dados = await resposta.json();
-
-    equipe = (dados.cartas || [])
-      .slice(0, 7)
-      .map(carta => ({
-        id: carta.id,
-        nome: carta.nome,
-        imagem: carta.imagem,
-        vida: carta.vida,
-        ataque: carta.ataque,
-        defesa: carta.defesa,
-        velocidade: carta.velocidade
-      }));
-
-    atualizarInterface();
-
-    if (equipe.length === 0) {
-      $("mensagem").textContent =
-        "Nenhuma carta encontrada.";
-    }
-  } catch (erro) {
-    $("mensagem").textContent =
-      "Erro ao carregar cartas: " + erro.message;
-  }
-}
-
-atualizarInterface();
-carregarCartas();
+const aliases={agua:'Água',magico:'Mágico',fisico:'Físico',gelo:'Gelo',frio:'Frio',fogo:'Fogo',natureza:'Natureza',sombras:'Sombras',sombra:'Sombras',luz:'Luz',cortante:'Cortante',suporte:'Suporte'};
+function normalizarTipo(t){let s=String(t||'').trim();let k=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return aliases[k]||s;}
+const numero=(v,padrao=0)=>Number.isFinite(Number(v))&&v!==null&&v!==''?Number(v):padrao;
+const limitar=(v,a,b)=>Math.max(a,Math.min(b,v));
+const sortear=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function listaHabilidades(d){if(!d)return[];if(typeof d==='string'){try{return listaHabilidades(JSON.parse(d))}catch{return[]}}if(Array.isArray(d))return d.filter(x=>x&&typeof x==='object');if(typeof d==='object')return Object.values(d).filter(x=>x&&typeof x==='object');return[];}
+function criar(tag,classe,conteudo){const e=document.createElement(tag);if(classe)e.className=classe;if(conteudo!==undefined)e.textContent=conteudo;return e;}
+let equipe=[],inicial=null,aliados=Array(4).fill(null),inimigos=Array(4).fill(null),pronto=false,inimigoPronto=false,iniciou=false,terminou=false,rodada=0,terreno=null,invocou=false,modoInvocacao=false,modoAtaque=false,atacanteSlot=null,habilidadeIndex=null;
+let reservaInimiga=[],acoesRestantes=new Set();
+function registrar(msg){if($('historico').textContent.trim()==='Aguardando preparação...')$('historico').replaceChildren();$('historico').prepend(criar('p','',msg));}
+function aviso(s){$('mensagem').textContent=s;}
+function instancia(c,entrada){return {...c,uid:crypto.randomUUID?crypto.randomUUID():String(Math.random()),vidaAtual:Math.max(1,numero(c.vida,100)),vidaMax:Math.max(1,numero(c.vida,100)),entrada,efeitos:[],usosPassivas:{}};}
+function vivos(campo){return campo.filter(Boolean);}
+function emReserva(){const ids=new Set(vivos(aliados).map(c=>c.id));return equipe.filter(c=>!ids.has(c.id));}
+function vidaHtml(box,c){const barra=criar('div','vida');const valor=criar('div');valor.style.width=(100*c.vidaAtual/c.vidaMax)+'%';barra.appendChild(valor);box.appendChild(barra);box.appendChild(criar('small','',`${Math.ceil(c.vidaAtual)}/${c.vidaMax} PV`));}
+function mostrar(box,c,comVida=true){if(c.imagem){const img=criar('img');img.src=c.imagem;img.alt=c.nome;img.onerror=()=>img.remove();box.appendChild(img)}box.appendChild(criar('strong','',c.nome));if(comVida&&c.vidaAtual!==undefined){vidaHtml(box,c);const status=c.entrada===rodada&&rodada>1?'⏳ Recém-invocada':c.efeitos.length?`✨ ${c.efeitos.map(e=>e.nome).join(', ')}`:'⚔️ Em campo';box.appendChild(criar('small','',status));}}
+function desenharCampo(){for(const [id,campo,adversario] of [['campo-jogador',aliados,false],['campo-inimigo',inimigos,true]]){$(id).replaceChildren();for(let i=0;i<4;i++){const slot=criar('div','espaco');const carta=iniciou?campo[i]:(!adversario&&i===0?inicial:null);if(!iniciou&&adversario){slot.appendChild(criar('span','oculto','🔒'))}else if(carta){slot.classList.add('ocupado');mostrar(slot,carta,iniciou);if(!iniciou&&!adversario&&!pronto){slot.classList.add('selecionavel');slot.onclick=()=>{inicial=null;atualizar()}}if(iniciou&&!terminou&&!adversario&&modoAtaque&&podeAtacar(i)){slot.classList.add('selecionavel','destaque');slot.onclick=()=>selecionarAtacante(i)}if(iniciou&&!terminou&&adversario&&modoAtaque&&atacanteSlot!==null&&habilidadeIndex!==null){slot.classList.add('alvo');slot.onclick=()=>executarAtaque(i)}}else slot.textContent='＋';$(id).appendChild(slot)}}$('contador').textContent=iniciou?`${vivos(aliados).length}/4 em campo`:`${inicial?1:0}/1 carta inicial`;}
+function desenharReserva(){$('reserva').replaceChildren();const cartas=iniciou?emReserva():equipe;for(const carta of cartas){const b=criar('button','');mostrar(b,carta,false);if(!iniciou&&inicial?.id===carta.id)b.classList.add('escolhida');b.disabled=terminou||(iniciou?!modoInvocacao:pronto);b.onclick=()=>{if(!iniciou){inicial=carta;aviso(`${carta.nome} escolhida.`);atualizar()}else invocar(carta)};$('reserva').appendChild(b)}if(!cartas.length)$('reserva').appendChild(criar('p','','Nenhuma carta disponível.'));}
+function podeAtacar(i){const c=aliados[i];return iniciou&&!terminou&&c&&acoesRestantes.has(c.uid)&&!(rodada>1&&c.entrada===rodada);}
+function atualizar(){desenharCampo();desenharReserva();$('indicador-rodada').textContent=iniciou?`Rodada ${rodada}`:'Preparação';$('status').textContent=terminou?'🏁 Combate encerrado.':iniciou?`Rodada ${rodada} — ${acoesRestantes.size} ação(ões) disponível(is).`:pronto?'🔒 Sua carta foi confirmada. Aguardando o adversário.':'Escolha uma carta inicial secretamente.';$('botao-pronto').disabled=pronto||!inicial;$('botao-adversario').disabled=inimigoPronto;$('acoes-preparacao').hidden=iniciou;$('acoes-combate').hidden=!iniciou;$('botao-invocar').disabled=!iniciou||terminou||rodada<2||invocou||vivos(aliados).length>=4||emReserva().length===0;$('botao-atacar').disabled=!iniciou||terminou||![0,1,2,3].some(podeAtacar);$('botao-rodada').disabled=!iniciou||terminou;$('painel-habilidades').hidden=atacanteSlot===null||!modoAtaque;}
+function confirmar(){if(!inicial||pronto)return;pronto=true;aviso('Carta inicial bloqueada. Aguardando adversário.');checarInicio();atualizar()}
+function simular(){if(inimigoPronto)return;inimigoPronto=true;aviso('O adversário está pronto.');checarInicio();atualizar()}
+function checarInicio(){if(iniciou||!pronto||!inimigoPronto)return;iniciou=true;rodada=1;aliados[0]=instancia(inicial,1);const opcoes=equipe.filter(c=>c.id!==inicial.id);const c=opcoes[sortear(0,opcoes.length-1)]||equipe[0];if(c)inimigos[0]=instancia(c,1);reservaInimiga=equipe.filter(x=>x.id!==c?.id);terreno=terrenos[sortear(0,terrenos.length-1)];$('nome-terreno').textContent=terreno.nome;$('efeito-terreno').textContent=Object.entries(terreno.mod).map(([tipo,m])=>`${tipo} ${m>=1?'+':'−'}${Math.round(Math.abs(m-1)*100)}%`).join(' | ');$('titulo-fase').textContent='⚔️ Batalha';$('instrucao-campo').textContent='Cartas posicionadas não podem ser trocadas.';$('instrucao-reserva').textContent='Novas cartas podem entrar a partir da rodada 2.';registrar(`🎲 Terreno: ${terreno.nome}`);registrar(`⚔️ ${aliados[0].nome} enfrenta ${inimigos[0]?.nome||'ninguém'}!`);aplicarPassivasEntrada(aliados[0],aliados,inimigos);if(inimigos[0])aplicarPassivasEntrada(inimigos[0],inimigos,aliados);iniciarRodada();}
+function iniciarRodada(){invocou=false;modoInvocacao=false;modoAtaque=false;atacanteSlot=null;habilidadeIndex=null;acoesRestantes=new Set(vivos(aliados).filter(c=>c.entrada<rodada||rodada===1).map(c=>c.uid));registrar(`📢 Rodada ${rodada} iniciada.`);atualizar();}
+function ativarInvocacao(){if(!iniciou||terminou||rodada<2||invocou||vivos(aliados).length>=4||!emReserva().length)return;modoInvocacao=!modoInvocacao;modoAtaque=false;atacanteSlot=null;habilidadeIndex=null;aviso(modoInvocacao?'Escolha uma carta da reserva.':'Invocação cancelada.');atualizar()}
+function invocar(carta){if(!modoInvocacao||rodada<2||invocou||terminou||!emReserva().some(c=>c.id===carta.id))return;const i=aliados.findIndex(c=>!c);if(i<0)return;aliados[i]=instancia(carta,rodada);invocou=true;modoInvocacao=false;registrar(`✨ Você invocou ${carta.nome}. Ela só poderá agir na próxima rodada.`);aplicarPassivasEntrada(aliados[i],aliados,inimigos);atualizar();}
+function ativarAtaque(){if(terminou||!iniciou)return;modoAtaque=!modoAtaque;modoInvocacao=false;atacanteSlot=null;habilidadeIndex=null;aviso(modoAtaque?'Clique em uma carta aliada destacada para escolher seu ataque.':'Seleção de ataque cancelada.');atualizar()}
+function selecionarAtacante(i){if(!podeAtacar(i))return;atacanteSlot=i;habilidadeIndex=null;const c=aliados[i];$('nome-atacante').textContent=`⚔️ ${c.nome} — escolha uma habilidade`;$('habilidades').replaceChildren();if(!c.ataques.length){$('habilidades').appendChild(criar('p','','Esta carta não possui ataques cadastrados.'));}for(const [index,h] of c.ataques.entries()){const nome=h.nome||`Habilidade ${index+1}`;const dano=numero(h.dano_min,0)||numero(h.dano_max,0)?` • ${numero(h.dano_min)}–${numero(h.dano_max)} dano`:'';const b=criar('button','',`${nome}${dano} • ${numero(h.precisao,100)}%`);b.onclick=()=>{habilidadeIndex=index;for(const x of $('habilidades').querySelectorAll('button'))x.classList.remove('ativo');b.classList.add('ativo');aviso('Agora clique no inimigo que receberá a habilidade.');desenharCampo()};$('habilidades').appendChild(b)}atualizar();}
+function modificador(c,tipo){let m=1;for(const e of c.efeitos){if(e.tipo==='aumentar_dano'&&tipo==='dano')m*=1+e.valor;if(e.tipo==='reduzir_dano'&&tipo==='dano')m*=1-e.valor;if(e.tipo==='aumentar_velocidade'&&tipo==='velocidade')m*=1+e.valor;if(e.tipo==='reduzir_velocidade'&&tipo==='velocidade')m*=1-e.valor;if(e.tipo==='aumentar_precisao'&&tipo==='precisao')m*=1+e.valor;if(e.tipo==='reduzir_precisao'&&tipo==='precisao')m*=1-e.valor;if(e.tipo==='reduzir_dano_recebido'&&tipo==='recebido')m*=1-e.valor;if(e.tipo==='aumentar_dano_recebido'&&tipo==='recebido')m*=1+e.valor;}return m;}
+function velocidade(c){return numero(c.velocidade,1)*modificador(c,'velocidade')}
+function chance(h,c){return limitar(numero(h.precisao,100)*modificador(c,'precisao'),0,100)}
+function valorEfeito(e){let n=numero(e.valor,0);return n>1?n/100:n;}
+function aplicarEfeito(alvo,ef,origem){if(!ef||typeof ef!=='object')return;const tipo=String(ef.tipo||'').trim().toLowerCase();const valor=valorEfeito(ef);const duracao=Math.max(1,Math.round(numero(ef.duracao,1)));const suportados=['reduzir_velocidade','aumentar_velocidade','reduzir_precisao','aumentar_precisao','aumentar_dano','reduzir_dano','reduzir_dano_recebido','aumentar_dano_recebido'];if(!suportados.includes(tipo)){registrar(`ℹ️ Efeito “${tipo||'desconhecido'}” de ${origem} ainda não implementado.`);return}alvo.efeitos.push({tipo,valor,duracao,nome:tipo.replaceAll('_',' ')});registrar(`✨ ${alvo.nome}: ${tipo.replaceAll('_',' ')} (${Math.round(valor*100)}%, ${duracao} rodada(s)).`);}
+function efeitosDaHabilidade(h){if(Array.isArray(h.efeitos))return h.efeitos;if(h.efeito)return Array.isArray(h.efeito)?h.efeito:[h.efeito];return[];}
+function ehBenefico(tipo){return /^(aumentar_|reduzir_dano_recebido)/.test(tipo)}
+function danoCalculado(atacante,alvo,h){const minimo=Math.max(0,Math.floor(numero(h.dano_min,0)));const maximo=Math.max(minimo,Math.floor(numero(h.dano_max,minimo)));const base=sortear(minimo,maximo);const tipo=normalizarTipo(h.tipo_dano);const multTerreno=terreno?.mod[tipo]||1;const multAtq=modificador(atacante,'dano');const multRec=modificador(alvo,'recebido');const defesa=Math.max(0,numero(alvo.defesa));const fatorDefesa=100/(100+defesa);const final=Math.max(base>0?1:0,Math.round(base*multTerreno*multAtq*multRec*fatorDefesa));return {base,final,tipo,multTerreno,defesa};}
+function removerMorto(campo){for(let i=0;i<campo.length;i++){const c=campo[i];if(c&&c.vidaAtual<=0){registrar(`💀 ${c.nome} foi derrotada!`);campo[i]=null;}}}
+function executarGolpe(atacante,alvo,h,campoAlvo){if(!atacante||!alvo||!h)return;const nome=h.nome||'Ataque';const acerto=Math.random()*100<chance(h,atacante);if(!acerto){registrar(`❌ ${atacante.nome} errou ${nome} contra ${alvo.nome}.`);return}const {base,final,tipo,multTerreno,defesa}=danoCalculado(atacante,alvo,h);if(final>0){alvo.vidaAtual=Math.max(0,alvo.vidaAtual-final);registrar(`⚔️ ${atacante.nome} usou ${nome} em ${alvo.nome}: ${final} dano (${tipo||'sem tipo'}, base ${base}, defesa ${defesa}, terreno ×${multTerreno.toFixed(2)}).`);}else registrar(`✨ ${atacante.nome} usou ${nome}.`);for(const ef of efeitosDaHabilidade(h)){const destino=ehBenefico(String(ef.tipo||''))?atacante:alvo;if(destino.vidaAtual>0)aplicarEfeito(destino,ef,nome)}removerMorto(campoAlvo);}
+function executarAtaque(indice){if(!modoAtaque||atacanteSlot===null||habilidadeIndex===null||terminou)return;const c=aliados[atacanteSlot],alvo=inimigos[indice];if(!c||!alvo||!podeAtacar(atacanteSlot))return;const h=c.ataques[habilidadeIndex];if(!h)return;acoesRestantes.delete(c.uid);executarGolpe(c,alvo,h,inimigos);modoAtaque=false;atacanteSlot=null;habilidadeIndex=null;aviso('Ataque realizado. Você pode atacar com outra carta ou encerrar a rodada.');verificarFim();atualizar();}
+function aplicarPassivasEntrada(c,amigos,oponentes){for(const p of c.passivas){const nome=p.nome||'Passiva';const ef=p.efeito||p;const tipo=String(ef.tipo||'').toLowerCase();if(tipo==='aumentar_vida'){const v=valorEfeito(ef);for(const aliado of vivos(amigos)){const extra=Math.round(aliado.vidaMax*v);aliado.vidaMax+=extra;aliado.vidaAtual+=extra}registrar(`🌟 ${c.nome}: ${nome} aumentou a vida dos aliados.`)}else if(['reduzir_velocidade','aumentar_velocidade','reduzir_precisao','aumentar_precisao','aumentar_dano','reduzir_dano','reduzir_dano_recebido'].includes(tipo)){const afetaInimigos=tipo.startsWith('reduzir_')&&tipo!=='reduzir_dano_recebido';for(const alvo of vivos(afetaInimigos?oponentes:amigos))aplicarEfeito(alvo,ef,nome);registrar(`🌟 Passiva ${nome} ativada.`)}else registrar(`ℹ️ Passiva “${nome}” ainda não possui execução automática nesta versão.`);}}
+function passarEfeitos(c){c.efeitos=c.efeitos.filter(e=>{e.duracao--;return e.duracao>0})}
+function acaoInimiga(){const disponiveis=vivos(inimigos).filter(c=>c.entrada<rodada||rodada===1).sort((a,b)=>velocidade(b)-velocidade(a));for(const c of disponiveis){if(terminou)break;const alvos=vivos(aliados);if(!alvos.length)break;const alvo=alvos[sortear(0,alvos.length-1)];const ataques=c.ataques.filter(h=>h&&typeof h==='object');if(!ataques.length){registrar(`ℹ️ ${c.nome} não possui ataques cadastrados.`);continue}const h=ataques[sortear(0,ataques.length-1)];executarGolpe(c,alvo,h,aliados);verificarFim();}}
+function invocarInimigo(){if(rodada<2||vivos(inimigos).length>=4||!reservaInimiga.length||terminou)return;const i=inimigos.findIndex(c=>!c);const escolha=reservaInimiga.splice(sortear(0,reservaInimiga.length-1),1)[0];inimigos[i]=instancia(escolha,rodada);registrar(`🔴 O adversário invocou ${escolha.nome}.`);aplicarPassivasEntrada(inimigos[i],inimigos,aliados);}
+function verificarFim(){if(terminou)return;const jogadorSemCartas=!vivos(aliados).length&&!emReserva().length;const inimigoSemCartas=!vivos(inimigos).length&&!reservaInimiga.length;if(jogadorSemCartas||inimigoSemCartas){terminou=true;registrar(jogadorSemCartas&&inimigoSemCartas?'🤝 Empate!':inimigoSemCartas?'🏆 Vitória!':'💀 Derrota!');aviso('Combate encerrado. Atualize a página para testar outra batalha.');}}
+function encerrarRodada(){if(!iniciou||terminou)return;modoAtaque=false;modoInvocacao=false;atacanteSlot=null;habilidadeIndex=null;registrar(`⏭️ Você encerrou suas ações da rodada ${rodada}.`);acaoInimiga();verificarFim();if(terminou){atualizar();return}for(const c of [...vivos(aliados),...vivos(inimigos)])passarEfeitos(c);rodada++;invocarInimigo();iniciarRodada();}
+async function carregar(){try{const r=await fetch(`${API}/cartas`);if(!r.ok)throw Error(`HTTP ${r.status}`);const dados=await r.json();equipe=(dados.cartas||[]).slice(0,7).map(c=>({id:c.id,nome:c.nome||'Carta sem nome',imagem:c.imagem||'',vida:numero(c.vida,100),ataque:numero(c.ataque),defesa:numero(c.defesa),velocidade:numero(c.velocidade),ataques:listaHabilidades(c.ataques||c.habilidades),passivas:listaHabilidades(c.passivas)}));if(!equipe.length)aviso('Não há cartas no catálogo.');else aviso(`${equipe.length} cartas carregadas do PostgreSQL para testes.`);atualizar()}catch(e){aviso(`Erro ao carregar cartas: ${e.message}`)}}
+$('botao-pronto').onclick=confirmar;$('botao-adversario').onclick=simular;$('botao-invocar').onclick=ativarInvocacao;$('botao-atacar').onclick=ativarAtaque;$('botao-rodada').onclick=encerrarRodada;atualizar();carregar();
 </script>
-
-</body>
-</html>
+</body></html>
