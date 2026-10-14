@@ -87,6 +87,18 @@ class Inventario(Base):
 
     xp = Column(Integer, default=0)
 
+    
+    # Reino proprietário do inventário
+    reino = Column(String(50), nullable=True, index=True)
+
+    # Quantidade de cópias da carta
+    quantidade = Column(Integer, default=1)
+
+    # Horário do último treinamento (milissegundos)
+    ultimo_treino = Column(Integer().with_variant(
+        __import__("sqlalchemy").BigInteger, "postgresql"
+    ), default=0)
+
     criado_em = Column(
         DateTime(timezone=True),
         server_default=func.now()
