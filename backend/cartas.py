@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Carta
+from models import Carta, ExclusaoCarta
 
 
 # ==========================================
