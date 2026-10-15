@@ -88,6 +88,39 @@ def iniciar(s):
     s.status='em_andamento';s.rodada=1;s.terreno=secrets.choice(TERRENOS);s.atualizado_em=agora()
 
 
+def cancelar_salas_com_carta(db, firebase_id):
+    """
+    Cancela salas de PvP que utilizam uma carta excluída.
+    Deve ser chamada dentro da transação de exclusão.
+    """
+    carta_id = str(firebase_id)
+    quantidade = 0
+
+    salas = db.query(Sala).filter(
+        Sala.status.in_([
+            "aguardando",
+            "escolhendo",
+            "em_andamento"
+        ])
+    ).with_for_update().all()
+
+    for sala in salas:
+        time1 = [str(id) for id in (sala.time1 or [])]
+        time2 = [str(id) for id in (sala.time2 or [])]
+
+        if (
+            carta_id in time1
+            or carta_id in time2
+            or str(sala.escolha1) == carta_id
+            or str(sala.escolha2) == carta_id
+        ):
+            sala.status = "cancelado"
+            sala.atualizado_em = agora()
+            quantidade += 1
+
+    return quantidade
+
+
 class Escolha(BaseModel):
     carta_id: str = Field(min_length=1, max_length=80)
 
