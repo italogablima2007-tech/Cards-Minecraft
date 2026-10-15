@@ -211,6 +211,7 @@ async function listarCartas() {
 }
 
 
+
 async function salvarCarta(carta) {
   const usuario = await perfil();
 
@@ -218,10 +219,41 @@ async function salvarCarta(carta) {
     throw Error("Apenas o Admin pode cadastrar cartas");
   }
 
+  const token = await auth.currentUser.getIdToken();
+
+  // Primeiro registra ou atualiza no PostgreSQL.
+  const resposta = await fetch(
+    "https://cards-minecraft.onrender.com/cartas/sincronizar",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        ...carta,
+        id: String(carta.id)
+      })
+    }
+  );
+
+  if (!resposta.ok) {
+    const erro = await resposta.json().catch(() => ({}));
+
+    throw Error(
+      typeof erro.detail === "string"
+        ? erro.detail
+        : `Erro ao sincronizar carta: HTTP ${resposta.status}`
+    );
+  }
+
+  // Mantém a cópia no Firebase para os sistemas existentes.
   await setDoc(
     doc(db, "cartas", String(carta.id)),
     carta
   );
+
+  return await resposta.json();
 }
 
 async function apagarCarta(id) {
