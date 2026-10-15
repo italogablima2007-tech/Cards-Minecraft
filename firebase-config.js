@@ -1,3 +1,4 @@
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 
 import {
@@ -22,7 +23,6 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-
 // ==================================================
 // CONFIGURAÇÃO DO FIREBASE
 // ==================================================
@@ -42,29 +42,22 @@ const db = getFirestore(app);
 
 const ADMIN_UID = "PnQ1N44V4ETTG6koXcW8JZpmh3P2";
 
-const reinos = [
-  "Drakmor",
-  "Solaris",
-  "Aetheryon"
-];
+const reinos = ["Drakmor", "Solaris", "Aetheryon"];
 
 const CONTAS_REINO = {
   Drakmor: {
     email: "italopaodeforma@gmail.com",
     uid: "o4TMyQzGeqT5XEclTRK5rA8tDOF2"
   },
-
   Solaris: {
     email: "maycomventurim@gmail.com",
     uid: "uwdUM1mMYEcMBKhC6XpNLrszAeI2"
   },
-
   Aetheryon: {
     email: "lavinya.sloiola@gmail.com",
     uid: "GMJajxBKyoZkJGDKfCcHzLmwrGl2"
   }
 };
-
 
 // ==================================================
 // LOGIN
@@ -77,15 +70,11 @@ const authReady = new Promise(resolve => {
   });
 });
 
-
 async function perfil() {
   await authReady;
-
   const usuario = auth.currentUser;
 
-  if (!usuario) {
-    return null;
-  }
+  if (!usuario) return null;
 
   if (usuario.uid === ADMIN_UID) {
     return {
@@ -100,14 +89,9 @@ async function perfil() {
   );
 
   return reino
-    ? {
-        uid: usuario.uid,
-        reino,
-        admin: false
-      }
+    ? { uid: usuario.uid, reino, admin: false }
     : null;
 }
-
 
 async function exigir() {
   let usuario;
@@ -125,14 +109,9 @@ async function exigir() {
     throw Error("Login não autorizado");
   }
 
-  localStorage.setItem(
-    "usuarioLogado",
-    usuario.reino
-  );
-
+  localStorage.setItem("usuarioLogado", usuario.reino);
   return usuario;
 }
-
 
 async function entrarReino(reino, codigo) {
   if (!CONTAS_REINO[reino]) {
@@ -153,18 +132,13 @@ async function entrarReino(reino, codigo) {
 
   if (credencial.user.uid !== CONTAS_REINO[reino].uid) {
     await signOut(auth);
-
-    throw Error(
-      "Esta conta não corresponde ao reino escolhido"
-    );
+    throw Error("Esta conta não corresponde ao reino escolhido");
   }
 
   localStorage.setItem("usuarioLogado", reino);
   localStorage.removeItem("reinoVisitante");
-
   location.href = "painel.html";
 }
-
 
 async function entrar(email, senha, escolha) {
   await authReady;
@@ -175,33 +149,22 @@ async function entrar(email, senha, escolha) {
     senha
   );
 
-  if (
-    escolha !== "Admin" ||
-    credencial.user.uid !== ADMIN_UID
-  ) {
+  if (escolha !== "Admin" || credencial.user.uid !== ADMIN_UID) {
     await signOut(auth);
-
-    throw Error(
-      "Esta conta não tem permissão de administrador"
-    );
+    throw Error("Esta conta não tem permissão de administrador");
   }
 
   localStorage.setItem("usuarioLogado", "Admin");
-
   location.href = "painel.html";
 }
 
-
 async function sair() {
   await signOut(auth);
-
   localStorage.removeItem("reinoVisitante");
   localStorage.removeItem("usuarioLogado");
   localStorage.removeItem("reinoAdministrado");
-
   location.href = "index.html";
 }
-
 
 // ==================================================
 // CARTAS
@@ -213,38 +176,29 @@ async function listarCartas() {
   );
 
   if (!resposta.ok) {
-    throw Error(
-      "Erro ao carregar cartas do servidor."
-    );
+    throw Error("Erro ao carregar cartas do servidor.");
   }
 
   const dados = await resposta.json();
 
   if (!Array.isArray(dados.cartas)) {
-    throw Error(
-      "O servidor retornou um catálogo inválido."
-    );
+    throw Error("O servidor retornou um catálogo inválido.");
   }
 
   return dados.cartas
     .map(carta => ({
       ...carta,
-
       id: Number(carta.firebase_id),
-
       postgres_id: carta.id
     }))
     .sort((a, b) => a.id - b.id);
 }
 
-
 async function salvarCarta(carta) {
   const usuario = await perfil();
 
   if (!usuario?.admin) {
-    throw Error(
-      "Apenas o Admin pode cadastrar cartas"
-    );
+    throw Error("Apenas o Admin pode cadastrar cartas");
   }
 
   const token = await auth.currentUser.getIdToken();
@@ -253,12 +207,10 @@ async function salvarCarta(carta) {
     "https://cards-minecraft.onrender.com/cartas/sincronizar",
     {
       method: "POST",
-
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-
       body: JSON.stringify({
         ...carta,
         id: String(carta.id)
@@ -268,7 +220,6 @@ async function salvarCarta(carta) {
 
   if (!resposta.ok) {
     const erro = await resposta.json().catch(() => ({}));
-
     throw Error(
       typeof erro.detail === "string"
         ? erro.detail
@@ -284,7 +235,6 @@ async function salvarCarta(carta) {
   return await resposta.json();
 }
 
-
 // ==================================================
 // EXCLUSÃO DE CARTAS
 // ==================================================
@@ -293,9 +243,7 @@ async function apagarCarta(id) {
   const usuario = await perfil();
 
   if (!usuario?.admin) {
-    throw Error(
-      "Apenas o Admin pode excluir cartas"
-    );
+    throw Error("Apenas o Admin pode excluir cartas");
   }
 
   const firebaseId = String(id).trim();
@@ -310,7 +258,6 @@ async function apagarCarta(id) {
     `https://cards-minecraft.onrender.com/cartas/${encodeURIComponent(firebaseId)}`,
     {
       method: "DELETE",
-
       headers: {
         "Authorization": `Bearer ${token}`
       }
@@ -327,9 +274,6 @@ async function apagarCarta(id) {
     );
   }
 
-  // Não considerar a exclusão concluída
-  // enquanto o backend retornar pendente.
-
   if (dados.exclusao_concluida !== true) {
     throw Error(
       dados.mensagem ||
@@ -339,7 +283,6 @@ async function apagarCarta(id) {
 
   return dados;
 }
-
 
 // ==================================================
 // INVENTÁRIO
@@ -355,7 +298,6 @@ async function inventario(reino) {
     : [];
 }
 
-
 // ==================================================
 // ADICIONAR CARTAS
 // ==================================================
@@ -370,38 +312,15 @@ async function adicionarCartas(reino, ids) {
   }
 
   await runTransaction(db, async transacao => {
-    const referencia = doc(
-      db,
-      "inventarios",
-      reino
-    );
-
-    const resultado = await transacao.get(
-      referencia
-    );
-
-    // Verificar cartas e registros de exclusão.
+    const referencia = doc(db, "inventarios", reino);
+    const resultado = await transacao.get(referencia);
 
     for (const id of new Set(ids.map(String))) {
-      const referenciaCarta = doc(
-        db,
-        "cartas",
-        id
-      );
+      const referenciaCarta = doc(db, "cartas", id);
+      const referenciaExclusao = doc(db, "exclusoesCartas", id);
 
-      const referenciaExclusao = doc(
-        db,
-        "exclusoesCartas",
-        id
-      );
-
-      const registroCarta = await transacao.get(
-        referenciaCarta
-      );
-
-      const registroExclusao = await transacao.get(
-        referenciaExclusao
-      );
+      const registroCarta = await transacao.get(referenciaCarta);
+      const registroExclusao = await transacao.get(referenciaExclusao);
 
       if (registroExclusao.exists()) {
         throw Error(
@@ -417,20 +336,16 @@ async function adicionarCartas(reino, ids) {
     }
 
     const lista = resultado.exists()
-      ? (resultado.data().cartas || []).map(
-          item => ({ ...item })
-        )
+      ? (resultado.data().cartas || []).map(item => ({ ...item }))
       : [];
 
     for (const id of ids) {
       const item = lista.find(
-        carta =>
-          String(carta.idCarta) === String(id)
+        carta => String(carta.idCarta) === String(id)
       );
 
       if (item) {
-        item.quantidade =
-          Number(item.quantidade || 0) + 1;
+        item.quantidade = Number(item.quantidade || 0) + 1;
       } else {
         lista.push({
           idCarta: id,
@@ -448,7 +363,6 @@ async function adicionarCartas(reino, ids) {
     );
   });
 }
-
 
 // ==================================================
 // IMPORTAR CARTAS ANTIGAS
@@ -483,30 +397,21 @@ async function importarCartas() {
   return quantidade;
 }
 
-
 // ==================================================
 // PACOTES DO ADMIN
 // ==================================================
 
-async function criarPacoteAdmin(
-  nome,
-  quantidadeOuItens,
-  destinatarios
-) {
+async function criarPacoteAdmin(nome, quantidadeOuItens, destinatarios) {
   const usuario = await perfil();
 
   if (!usuario?.admin) {
-    throw Error(
-      "Apenas o Admin pode criar pacotes"
-    );
+    throw Error("Apenas o Admin pode criar pacotes");
   }
 
   if (
     !Array.isArray(destinatarios) ||
     !destinatarios.length ||
-    destinatarios.some(
-      reino => !reinos.includes(reino)
-    )
+    destinatarios.some(reino => !reinos.includes(reino))
   ) {
     throw Error("Destinatário inválido");
   }
@@ -514,45 +419,30 @@ async function criarPacoteAdmin(
   const catalogo = await listarCartas();
 
   if (!catalogo.length) {
-    throw Error(
-      "Cadastre cartas antes de enviar"
-    );
+    throw Error("Cadastre cartas antes de enviar");
   }
 
   const idsValidos = new Map(
-    catalogo.map(
-      carta => [String(carta.id), carta.id]
-    )
+    catalogo.map(carta => [String(carta.id), carta.id])
   );
 
   const entregas = [];
 
-  // ========================================
   // PACOTES PERSONALIZADOS
-  // ========================================
 
   if (Array.isArray(quantidadeOuItens)) {
     const ids = [];
 
     if (!quantidadeOuItens.length) {
-      throw Error(
-        "Selecione pelo menos uma carta"
-      );
+      throw Error("Selecione pelo menos uma carta");
     }
 
     for (const item of quantidadeOuItens) {
-      const id = idsValidos.get(
-        String(item.idCarta)
-      );
-
-      const quantidade = Number(
-        item.quantidade
-      );
+      const id = idsValidos.get(String(item.idCarta));
+      const quantidade = Number(item.quantidade);
 
       if (id === undefined) {
-        throw Error(
-          "Uma das cartas não existe no catálogo"
-        );
+        throw Error("Uma das cartas não existe no catálogo");
       }
 
       if (
@@ -560,9 +450,7 @@ async function criarPacoteAdmin(
         quantidade < 1 ||
         quantidade > 30
       ) {
-        throw Error(
-          "Quantidade inválida para uma carta"
-        );
+        throw Error("Quantidade inválida para uma carta");
       }
 
       for (let i = 0; i < quantidade; i++) {
@@ -571,19 +459,16 @@ async function criarPacoteAdmin(
     }
 
     if (ids.length > 30) {
-      throw Error(
-        "Máximo de 30 cartas por pacote"
-      );
+      throw Error("Máximo de 30 cartas por pacote");
     }
 
     for (const reino of [...new Set(destinatarios)]) {
       const referencia = await addDoc(
         collection(db, "pacotesEnviados"),
         {
-          nome: String(
-            nome || "Presente do Admin"
-          ).trim().slice(0, 70),
-
+          nome: String(nome || "Presente do Admin")
+            .trim()
+            .slice(0, 70),
           destinatario: reino,
           cartas: ids,
           status: "pendente",
@@ -597,41 +482,32 @@ async function criarPacoteAdmin(
     return entregas;
   }
 
-  // ========================================
   // PACOTES ALEATÓRIOS
-  // ========================================
 
-  const numero = Number(
-    quantidadeOuItens
-  );
+  const numero = Number(quantidadeOuItens);
 
   if (
     !Number.isInteger(numero) ||
     numero < 1 ||
     numero > 30
   ) {
-    throw Error(
-      "Quantidade deve ser entre 1 e 30"
-    );
+    throw Error("Quantidade deve ser entre 1 e 30");
   }
 
   for (const reino of [...new Set(destinatarios)]) {
     const ids = Array.from(
       { length: numero },
       () => catalogo[
-        Math.floor(
-          Math.random() * catalogo.length
-        )
+        Math.floor(Math.random() * catalogo.length)
       ].id
     );
 
     const referencia = await addDoc(
       collection(db, "pacotesEnviados"),
       {
-        nome: String(
-          nome || "Presente do Admin"
-        ).trim().slice(0, 70),
-
+        nome: String(nome || "Presente do Admin")
+          .trim()
+          .slice(0, 70),
         destinatario: reino,
         cartas: ids,
         status: "pendente",
@@ -645,16 +521,11 @@ async function criarPacoteAdmin(
   return entregas;
 }
 
-
 // ==================================================
 // PACOTE PERSONALIZADO
 // ==================================================
 
-async function criarPacotePersonalizado(
-  nome,
-  destinatario,
-  itens
-) {
+async function criarPacotePersonalizado(nome, destinatario, itens) {
   const entregas = await criarPacoteAdmin(
     nome,
     itens,
@@ -663,7 +534,6 @@ async function criarPacotePersonalizado(
 
   return entregas[0];
 }
-
 
 // ==================================================
 // LISTAR PACOTES RECEBIDOS
@@ -674,10 +544,7 @@ async function listarPacotesRecebidos(reino) {
 
   if (
     !usuario ||
-    (
-      usuario.reino !== reino &&
-      !usuario.admin
-    )
+    (usuario.reino !== reino && !usuario.admin)
   ) {
     throw Error("Sem permissão");
   }
@@ -687,26 +554,19 @@ async function listarPacotesRecebidos(reino) {
     where("destinatario", "==", reino)
   );
 
-  const resultado = await getDocs(
-    consulta
-  );
+  const resultado = await getDocs(consulta);
 
   return resultado.docs
     .map(documento => ({
       id: documento.id,
       ...documento.data()
     }))
-    .filter(
-      pacote => pacote.status === "pendente"
-    )
-    .sort(
-      (a, b) => a.criadoEm - b.criadoEm
-    );
+    .filter(pacote => pacote.status === "pendente")
+    .sort((a, b) => a.criadoEm - b.criadoEm);
 }
 
-
 // ==================================================
-// RESGATAR PACOTE
+// RESGATAR PACOTE — NOVO BACKEND PROTEGIDO
 // ==================================================
 
 async function resgatarPacote(id, reino) {
@@ -714,160 +574,51 @@ async function resgatarPacote(id, reino) {
 
   if (
     !usuario ||
-    (
-      usuario.reino !== reino &&
-      !usuario.admin
-    )
+    (usuario.reino !== reino && !usuario.admin)
   ) {
-    throw Error("Sem permissão");
+    throw Error("Sem permissão para resgatar este pacote.");
   }
 
-  return runTransaction(
-    db,
-    async transacao => {
-      const referencia = doc(
-        db,
-        "pacotesEnviados",
-        id
-      );
+  const conta = auth.currentUser;
 
-      const referenciaInventario = doc(
-        db,
-        "inventarios",
-        reino
-      );
+  if (!conta) {
+    throw Error("Faça login para resgatar o pacote.");
+  }
 
-      const pacote = await transacao.get(
-        referencia
-      );
+  const token = await conta.getIdToken();
 
-      const inventarioAtual = await transacao.get(
-        referenciaInventario
-      );
-
-      if (!pacote.exists()) {
-        throw Error(
-          "Pacote não encontrado"
-        );
+  const resposta = await fetch(
+    `https://cards-minecraft.onrender.com/inventario/pacotes/${encodeURIComponent(String(id))}/resgatar`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-
-      const dados = pacote.data();
-
-      if (
-        dados.destinatario !== reino ||
-        dados.status !== "pendente"
-      ) {
-        throw Error(
-          "Pacote já resgatado ou inválido"
-        );
-      }
-
-      if (
-        !Array.isArray(dados.cartas) ||
-        !dados.cartas.length
-      ) {
-        throw Error(
-          "Pacote inválido ou vazio"
-        );
-      }
-
-      // ====================================
-      // VERIFICAR CARTAS EXCLUÍDAS
-      // ====================================
-
-      for (
-        const idCarta of new Set(
-          dados.cartas.map(String)
-        )
-      ) {
-        const referenciaCarta = doc(
-          db,
-          "cartas",
-          idCarta
-        );
-
-        const referenciaExclusao = doc(
-          db,
-          "exclusoesCartas",
-          idCarta
-        );
-
-        const registroCarta = await transacao.get(
-          referenciaCarta
-        );
-
-        const registroExclusao = await transacao.get(
-          referenciaExclusao
-        );
-
-        if (registroExclusao.exists()) {
-          throw Error(
-            "Este pacote contém uma carta excluída do jogo. " +
-            "Solicite ao administrador a atualização do pacote."
-          );
-        }
-
-        if (!registroCarta.exists()) {
-          throw Error(
-            "Este pacote contém uma carta indisponível. " +
-            "Solicite ao administrador a atualização do pacote."
-          );
-        }
-      }
-
-      // ====================================
-      // ATUALIZAR INVENTÁRIO
-      // ====================================
-
-      const lista = inventarioAtual.exists()
-        ? (
-            inventarioAtual.data().cartas || []
-          ).map(item => ({ ...item }))
-        : [];
-
-      for (const idCarta of dados.cartas) {
-        const item = lista.find(
-          carta =>
-            String(carta.idCarta) ===
-            String(idCarta)
-        );
-
-        if (item) {
-          item.quantidade =
-            Number(item.quantidade || 0) + 1;
-        } else {
-          lista.push({
-            idCarta,
-            quantidade: 1,
-            nivel: 0,
-            xp: 0
-          });
-        }
-      }
-
-      transacao.set(
-        referenciaInventario,
-        { cartas: lista },
-        { merge: true }
-      );
-
-      transacao.update(
-        referencia,
-        { status: "resgatado" }
-      );
-
-      return dados.cartas;
     }
   );
-}
 
+  const dados = await resposta.json().catch(() => ({}));
+
+  if (!resposta.ok) {
+    throw Error(
+      typeof dados.detail === "string"
+        ? dados.detail
+        : `Erro ao resgatar pacote: HTTP ${resposta.status}`
+    );
+  }
+
+  if (!Array.isArray(dados.cartas)) {
+    throw Error("O servidor retornou uma resposta inválida.");
+  }
+
+  return dados.cartas;
+}
 
 // ==================================================
 // PACOTE DIÁRIO
 // ==================================================
 
-const INTERVALO_DIARIO_MS =
-  24 * 60 * 60 * 1000;
+const INTERVALO_DIARIO_MS = 24 * 60 * 60 * 1000;
 
 const CHANCES_DIARIAS = [
   ["comum", 60],
@@ -877,7 +628,6 @@ const CHANCES_DIARIAS = [
   ["mitica", 1]
 ];
 
-
 function normalizarRaridade(valor) {
   return String(valor || "")
     .normalize("NFD")
@@ -886,21 +636,13 @@ function normalizarRaridade(valor) {
     .trim();
 }
 
-
-function sortearCartasDiarias(
-  cartas,
-  quantidade = 3
-) {
+function sortearCartasDiarias(cartas, quantidade = 3) {
   const grupos = new Map(
-    CHANCES_DIARIAS.map(
-      ([raridade]) => [raridade, []]
-    )
+    CHANCES_DIARIAS.map(([raridade]) => [raridade, []])
   );
 
   for (const carta of cartas) {
-    const raridade = normalizarRaridade(
-      carta.raridade
-    );
+    const raridade = normalizarRaridade(carta.raridade);
 
     if (
       grupos.has(raridade) &&
@@ -912,8 +654,7 @@ function sortearCartasDiarias(
   }
 
   const disponiveis = CHANCES_DIARIAS.filter(
-    ([raridade]) =>
-      grupos.get(raridade).length
+    ([raridade]) => grupos.get(raridade).length
   );
 
   if (!disponiveis.length) {
@@ -927,41 +668,28 @@ function sortearCartasDiarias(
     0
   );
 
-  return Array.from(
-    { length: quantidade },
-    () => {
-      let sorteio =
-        Math.random() * pesoTotal;
+  return Array.from({ length: quantidade }, () => {
+    let sorteio = Math.random() * pesoTotal;
 
-      let raridadeEscolhida =
-        disponiveis[
-          disponiveis.length - 1
-        ][0];
+    let raridadeEscolhida =
+      disponiveis[disponiveis.length - 1][0];
 
-      for (
-        const [raridade, peso] of disponiveis
-      ) {
-        sorteio -= peso;
+    for (const [raridade, peso] of disponiveis) {
+      sorteio -= peso;
 
-        if (sorteio < 0) {
-          raridadeEscolhida = raridade;
-          break;
-        }
+      if (sorteio < 0) {
+        raridadeEscolhida = raridade;
+        break;
       }
-
-      const grupo = grupos.get(
-        raridadeEscolhida
-      );
-
-      return grupo[
-        Math.floor(
-          Math.random() * grupo.length
-        )
-      ].id;
     }
-  );
-}
 
+    const grupo = grupos.get(raridadeEscolhida);
+
+    return grupo[
+      Math.floor(Math.random() * grupo.length)
+    ].id;
+  });
+}
 
 // ==================================================
 // ESTADO DO PACOTE DIÁRIO
@@ -995,11 +723,9 @@ async function estadoPacoteDiario(reino) {
     proximoEm: horario
       ? horario + INTERVALO_DIARIO_MS
       : 0,
-
     agora: Date.now()
   };
 }
-
 
 // ==================================================
 // ABRIR PACOTE DIÁRIO
@@ -1019,11 +745,7 @@ async function abrirPacoteDiario(reino) {
   }
 
   const catalogo = await listarCartas();
-
-  const ids = sortearCartasDiarias(
-    catalogo,
-    3
-  );
+  const ids = sortearCartasDiarias(catalogo, 3);
 
   const referenciaDiario = doc(
     db,
@@ -1037,153 +759,118 @@ async function abrirPacoteDiario(reino) {
     reino
   );
 
-  await runTransaction(
-    db,
-    async transacao => {
-      const diario = await transacao.get(
-        referenciaDiario
+  await runTransaction(db, async transacao => {
+    const diario = await transacao.get(referenciaDiario);
+    const inventarioAtual = await transacao.get(
+      referenciaInventario
+    );
+
+    for (const idCarta of new Set(ids.map(String))) {
+      const referenciaCarta = doc(
+        db,
+        "cartas",
+        idCarta
       );
 
-      const inventarioAtual = await transacao.get(
-        referenciaInventario
+      const referenciaExclusao = doc(
+        db,
+        "exclusoesCartas",
+        idCarta
       );
 
-      // ====================================
-      // VERIFICAR CARTAS EXCLUÍDAS
-      // ====================================
+      const registroCarta = await transacao.get(
+        referenciaCarta
+      );
 
-      for (
-        const idCarta of new Set(
-          ids.map(String)
-        )
-      ) {
-        const referenciaCarta = doc(
-          db,
-          "cartas",
-          idCarta
-        );
+      const registroExclusao = await transacao.get(
+        referenciaExclusao
+      );
 
-        const referenciaExclusao = doc(
-          db,
-          "exclusoesCartas",
-          idCarta
-        );
-
-        const registroCarta = await transacao.get(
-          referenciaCarta
-        );
-
-        const registroExclusao = await transacao.get(
-          referenciaExclusao
-        );
-
-        if (registroExclusao.exists()) {
-          throw Error(
-            "Uma carta sorteada foi excluída. " +
-            "Tente abrir o pacote novamente."
-          );
-        }
-
-        if (!registroCarta.exists()) {
-          throw Error(
-            "Uma carta sorteada não está mais disponível. " +
-            "Tente abrir o pacote novamente."
-          );
-        }
-      }
-
-      // ====================================
-      // VERIFICAR TEMPO DE ESPERA
-      // ====================================
-
-      const ultimo = (
-        diario.exists() &&
-        diario.data().abertoEm?.toMillis
-      )
-        ? diario.data().abertoEm.toMillis()
-        : 0;
-
-      if (
-        ultimo &&
-        Date.now() <
-          ultimo + INTERVALO_DIARIO_MS
-      ) {
-        const erro = Error(
-          "Pacote indisponível: aguarde a próxima abertura."
-        );
-
-        erro.proximoEm =
-          ultimo + INTERVALO_DIARIO_MS;
-
-        throw erro;
-      }
-
-      // ====================================
-      // ENTREGAR CARTAS
-      // ====================================
-
-      const lista = inventarioAtual.exists()
-        ? (
-            inventarioAtual.data().cartas || []
-          ).map(item => ({ ...item }))
-        : [];
-
-      for (const id of ids) {
-        const item = lista.find(
-          carta =>
-            String(carta.idCarta) ===
-            String(id)
-        );
-
-        if (item) {
-          item.quantidade =
-            Number(item.quantidade || 0) + 1;
-        } else {
-          lista.push({
-            idCarta: id,
-            quantidade: 1,
-            nivel: 0,
-            xp: 0
-          });
-        }
-      }
-
-      if (lista.length > 500) {
+      if (registroExclusao.exists()) {
         throw Error(
-          "O inventário atingiu o limite de 500 tipos de cartas."
+          "Uma carta sorteada foi excluída. " +
+          "Tente abrir o pacote novamente."
         );
       }
 
-      transacao.set(
-        referenciaInventario,
-        { cartas: lista },
-        { merge: true }
+      if (!registroCarta.exists()) {
+        throw Error(
+          "Uma carta sorteada não está mais disponível. " +
+          "Tente abrir o pacote novamente."
+        );
+      }
+    }
+
+    const ultimo = (
+      diario.exists() &&
+      diario.data().abertoEm?.toMillis
+    )
+      ? diario.data().abertoEm.toMillis()
+      : 0;
+
+    if (
+      ultimo &&
+      Date.now() < ultimo + INTERVALO_DIARIO_MS
+    ) {
+      const erro = Error(
+        "Pacote indisponível: aguarde a próxima abertura."
       );
 
-      transacao.set(
-        referenciaDiario,
-        {
-          abertoEm: serverTimestamp()
-        }
+      erro.proximoEm = ultimo + INTERVALO_DIARIO_MS;
+      throw erro;
+    }
+
+    const lista = inventarioAtual.exists()
+      ? (inventarioAtual.data().cartas || [])
+          .map(item => ({ ...item }))
+      : [];
+
+    for (const id of ids) {
+      const item = lista.find(
+        carta => String(carta.idCarta) === String(id)
+      );
+
+      if (item) {
+        item.quantidade =
+          Number(item.quantidade || 0) + 1;
+      } else {
+        lista.push({
+          idCarta: id,
+          quantidade: 1,
+          nivel: 0,
+          xp: 0
+        });
+      }
+    }
+
+    if (lista.length > 500) {
+      throw Error(
+        "O inventário atingiu o limite de 500 tipos de cartas."
       );
     }
-  );
+
+    transacao.set(
+      referenciaInventario,
+      { cartas: lista },
+      { merge: true }
+    );
+
+    transacao.set(
+      referenciaDiario,
+      { abertoEm: serverTimestamp() }
+    );
+  });
 
   return ids;
 }
-
 
 // ==================================================
 // SISTEMA DE XP E EVOLUÇÃO
 // ==================================================
 
 const NIVEL_MAXIMO = 30;
-
-const INTERVALO_TREINO_MS =
-  4 * 60 * 60 * 1000;
-
+const INTERVALO_TREINO_MS = 4 * 60 * 60 * 1000;
 const XP_TREINO = 100;
-
 
 function xpNecessario(nivel) {
   const numero = Math.max(
@@ -1201,21 +888,16 @@ function xpNecessario(nivel) {
   return 100 + numero * 25;
 }
 
-
 function etapaEvolucao(carta, nivel) {
-  const evolucoes = Array.isArray(
-    carta?.evolucoes
-  )
+  const evolucoes = Array.isArray(carta?.evolucoes)
     ? carta.evolucoes
     : [];
 
   return evolucoes.find(
     evolucao =>
-      Number(evolucao.nivel) ===
-      Number(nivel)
+      Number(evolucao.nivel) === Number(nivel)
   ) || null;
 }
-
 
 function atributosCarta(carta, item) {
   const nivel = Math.max(
@@ -1226,15 +908,8 @@ function atributosCarta(carta, item) {
     )
   );
 
-  const primeira = etapaEvolucao(
-    carta,
-    11
-  );
-
-  const segunda = etapaEvolucao(
-    carta,
-    21
-  );
+  const primeira = etapaEvolucao(carta, 11);
+  const segunda = etapaEvolucao(carta, 21);
 
   const forma = nivel >= 21
     ? (segunda || primeira)
@@ -1243,15 +918,11 @@ function atributosCarta(carta, item) {
       : null;
 
   const bonus = forma?.bonus || {};
-
   const fator = 1 + nivel * 0.015;
 
   const atributo = nome => {
-    const valorBase =
-      Number(carta?.[nome]) || 0;
-
-    const valorBonus =
-      Number(bonus[nome]) || 0;
+    const valorBase = Number(carta?.[nome]) || 0;
+    const valorBonus = Number(bonus[nome]) || 0;
 
     return Math.round(
       valorBase * fator + valorBonus
@@ -1264,7 +935,6 @@ function atributosCarta(carta, item) {
     imagem: forma?.imagem || carta.imagem,
     fundo: forma?.fundo || carta.fundo,
     raridade: forma?.raridade || carta.raridade,
-
     vida: atributo("vida"),
     ataque: atributo("ataque"),
     defesa: atributo("defesa"),
@@ -1272,11 +942,7 @@ function atributosCarta(carta, item) {
   };
 }
 
-
-function validarReinoDaCarta(
-  usuario,
-  reino
-) {
+function validarReinoDaCarta(usuario, reino) {
   if (
     !usuario ||
     usuario.admin ||
@@ -1288,15 +954,11 @@ function validarReinoDaCarta(
   }
 }
 
-
 // ==================================================
 // TREINAMENTO
 // ==================================================
 
-async function treinarCarta(
-  reino,
-  idCarta
-) {
+async function treinarCarta(reino, idCarta) {
   validarReinoDaCarta(
     await perfil(),
     reino
@@ -1320,76 +982,106 @@ async function treinarCarta(
     String(idCarta)
   );
 
-  return runTransaction(
-    db,
-    async transacao => {
-      const inventarioAtual = await transacao.get(
-        referenciaInventario
+  return runTransaction(db, async transacao => {
+    const inventarioAtual = await transacao.get(
+      referenciaInventario
+    );
+
+    const registroCarta = await transacao.get(
+      referenciaCarta
+    );
+
+    const registroExclusao = await transacao.get(
+      referenciaExclusao
+    );
+
+    if (registroExclusao.exists()) {
+      throw Error(
+        "Esta carta foi excluída e não pode ser treinada."
       );
+    }
 
-      const registroCarta = await transacao.get(
-        referenciaCarta
+    if (!registroCarta.exists()) {
+      throw Error("Carta não encontrada no catálogo.");
+    }
+
+    const carta = registroCarta.data();
+
+    const lista = inventarioAtual.exists()
+      ? (inventarioAtual.data().cartas || [])
+          .map(item => ({ ...item }))
+      : [];
+
+    const item = lista.find(
+      cartaInventario =>
+        String(cartaInventario.idCarta) ===
+        String(idCarta)
+    );
+
+    if (
+      !item ||
+      Number(item.quantidade || 0) < 1
+    ) {
+      throw Error("Você não possui esta carta.");
+    }
+
+    let nivel = Math.max(
+      0,
+      Math.min(
+        NIVEL_MAXIMO,
+        Number(item.nivel ?? 0)
+      )
+    );
+
+    let xp = Math.max(
+      0,
+      Number(item.xp) || 0
+    );
+
+    if (nivel >= NIVEL_MAXIMO) {
+      throw Error(
+        "Esta carta já está no nível máximo."
       );
+    }
 
-      const registroExclusao = await transacao.get(
-        referenciaExclusao
+    const bloqueado = (
+      nivel === 10 &&
+      etapaEvolucao(carta, 11)
+    ) || (
+      nivel === 20 &&
+      etapaEvolucao(carta, 21)
+    );
+
+    if (
+      bloqueado &&
+      xp >= xpNecessario(nivel)
+    ) {
+      throw Error(
+        "XP completo. Evolua esta carta para continuar treinando."
       );
+    }
 
-      if (registroExclusao.exists()) {
-        throw Error(
-          "Esta carta foi excluída e não pode ser treinada."
-        );
-      }
+    const agora = Date.now();
+    const ultimoTreino = Number(
+      item.ultimoTreino || 0
+    );
 
-      if (!registroCarta.exists()) {
-        throw Error(
-          "Carta não encontrada no catálogo."
-        );
-      }
-
-      const carta = registroCarta.data();
-
-      const lista = inventarioAtual.exists()
-        ? (
-            inventarioAtual.data().cartas || []
-          ).map(item => ({ ...item }))
-        : [];
-
-      const item = lista.find(
-        cartaInventario =>
-          String(cartaInventario.idCarta) ===
-          String(idCarta)
+    if (
+      ultimoTreino &&
+      agora < ultimoTreino + INTERVALO_TREINO_MS
+    ) {
+      throw Error(
+        "Treino indisponível. Aguarde 4 horas desde o último treino."
       );
+    }
 
-      if (
-        !item ||
-        Number(item.quantidade || 0) < 1
-      ) {
-        throw Error(
-          "Você não possui esta carta."
-        );
-      }
+    xp += XP_TREINO;
 
-      let nivel = Math.max(
-        0,
-        Math.min(
-          NIVEL_MAXIMO,
-          Number(item.nivel ?? 0)
-        )
-      );
-
-      let xp = Math.max(
-        0,
-        Number(item.xp) || 0
-      );
-
-      if (nivel >= NIVEL_MAXIMO) {
-        throw Error(
-          "Esta carta já está no nível máximo."
-        );
-      }
-
-      const bloqueado = (
+    while (
+      nivel < NIVEL_MAXIMO &&
+      xp >= xpNecessario(nivel)
+    ) {
+      const exigeEvolucao = (
         nivel === 10 &&
         etapaEvolucao(carta, 11)
       ) || (
@@ -1397,104 +1089,54 @@ async function treinarCarta(
         etapaEvolucao(carta, 21)
       );
 
-      if (
-        bloqueado &&
-        xp >= xpNecessario(nivel)
-      ) {
-        throw Error(
-          "XP completo. Evolua esta carta para continuar treinando."
-        );
+      if (exigeEvolucao) {
+        xp = xpNecessario(nivel);
+        break;
       }
 
-      const agora = Date.now();
+      xp -= xpNecessario(nivel);
+      nivel++;
 
-      const ultimoTreino = Number(
-        item.ultimoTreino || 0
+      const chegouNaEvolucao = (
+        nivel === 10 &&
+        etapaEvolucao(carta, 11)
+      ) || (
+        nivel === 20 &&
+        etapaEvolucao(carta, 21)
       );
 
-      if (
-        ultimoTreino &&
-        agora <
-          ultimoTreino + INTERVALO_TREINO_MS
-      ) {
-        throw Error(
-          "Treino indisponível. Aguarde 4 horas desde o último treino."
+      if (chegouNaEvolucao) {
+        xp = Math.min(
+          xp,
+          xpNecessario(nivel)
         );
+        break;
       }
-
-      xp += XP_TREINO;
-
-      while (
-        nivel < NIVEL_MAXIMO &&
-        xp >= xpNecessario(nivel)
-      ) {
-        const exigeEvolucao = (
-          nivel === 10 &&
-          etapaEvolucao(carta, 11)
-        ) || (
-          nivel === 20 &&
-          etapaEvolucao(carta, 21)
-        );
-
-        if (exigeEvolucao) {
-          xp = xpNecessario(nivel);
-          break;
-        }
-
-        xp -= xpNecessario(nivel);
-        nivel++;
-
-        const chegouNaEvolucao = (
-          nivel === 10 &&
-          etapaEvolucao(carta, 11)
-        ) || (
-          nivel === 20 &&
-          etapaEvolucao(carta, 21)
-        );
-
-        if (chegouNaEvolucao) {
-          xp = Math.min(
-            xp,
-            xpNecessario(nivel)
-          );
-
-          break;
-        }
-      }
-
-      item.nivel = nivel;
-
-      item.xp =
-        nivel >= NIVEL_MAXIMO
-          ? 0
-          : xp;
-
-      item.ultimoTreino = agora;
-
-      transacao.set(
-        referenciaInventario,
-        { cartas: lista },
-        { merge: true }
-      );
-
-      return {
-        nivel: item.nivel,
-        xp: item.xp,
-        recebido: XP_TREINO
-      };
     }
-  );
-}
 
+    item.nivel = nivel;
+    item.xp = nivel >= NIVEL_MAXIMO ? 0 : xp;
+    item.ultimoTreino = agora;
+
+    transacao.set(
+      referenciaInventario,
+      { cartas: lista },
+      { merge: true }
+    );
+
+    return {
+      nivel: item.nivel,
+      xp: item.xp,
+      recebido: XP_TREINO
+    };
+  });
+}
 
 // ==================================================
 // EVOLUIR CARTA
 // ==================================================
 
-async function evoluirCarta(
-  reino,
-  idCarta
-) {
+async function evoluirCarta(reino, idCarta) {
   validarReinoDaCarta(
     await perfil(),
     reino
@@ -1518,146 +1160,129 @@ async function evoluirCarta(
     String(idCarta)
   );
 
-  return runTransaction(
-    db,
-    async transacao => {
-      const inventarioAtual = await transacao.get(
-        referenciaInventario
+  return runTransaction(db, async transacao => {
+    const inventarioAtual = await transacao.get(
+      referenciaInventario
+    );
+
+    const registroCarta = await transacao.get(
+      referenciaCarta
+    );
+
+    const registroExclusao = await transacao.get(
+      referenciaExclusao
+    );
+
+    if (registroExclusao.exists()) {
+      throw Error(
+        "Esta carta foi excluída e não pode evoluir."
       );
-
-      const registroCarta = await transacao.get(
-        referenciaCarta
-      );
-
-      const registroExclusao = await transacao.get(
-        referenciaExclusao
-      );
-
-      if (registroExclusao.exists()) {
-        throw Error(
-          "Esta carta foi excluída e não pode evoluir."
-        );
-      }
-
-      if (!registroCarta.exists()) {
-        throw Error(
-          "Carta não encontrada no catálogo."
-        );
-      }
-
-      const carta = registroCarta.data();
-
-      const lista = inventarioAtual.exists()
-        ? (
-            inventarioAtual.data().cartas || []
-          ).map(item => ({ ...item }))
-        : [];
-
-      const item = lista.find(
-        cartaInventario =>
-          String(cartaInventario.idCarta) ===
-          String(idCarta)
-      );
-
-      if (!item) {
-        throw Error(
-          "Carta não encontrada no inventário."
-        );
-      }
-
-      const nivel = Number(
-        item.nivel ?? 0
-      );
-
-      if (
-        nivel !== 10 &&
-        nivel !== 20
-      ) {
-        throw Error(
-          "A evolução exige que a carta esteja no nível 10 ou 20."
-        );
-      }
-
-      const proximoNivel = nivel + 1;
-
-      const evolucao = etapaEvolucao(
-        carta,
-        proximoNivel
-      );
-
-      if (!evolucao) {
-        throw Error(
-          "O Admin ainda não cadastrou essa evolução."
-        );
-      }
-
-      const padraoDuplicatas =
-        proximoNivel === 11 ? 3 : 5;
-
-      const duplicatasNecessarias = Math.max(
-        0,
-        Math.floor(
-          Number(
-            evolucao.duplicatas ??
-            padraoDuplicatas
-          )
-        )
-      );
-
-      const quantidade = Number(
-        item.quantidade || 0
-      );
-
-      if (
-        quantidade <
-        duplicatasNecessarias + 1
-      ) {
-        throw Error(
-          `Você precisa de ${duplicatasNecessarias} cópias extras. ` +
-          `Possui ${Math.max(0, quantidade - 1)}.`
-        );
-      }
-
-      const xpExigido = xpNecessario(
-        nivel
-      );
-
-      if (
-        Number(item.xp || 0) <
-        xpExigido
-      ) {
-        throw Error(
-          `Faltam ${
-            xpExigido -
-            Number(item.xp || 0)
-          } XP para evoluir.`
-        );
-      }
-
-      item.quantidade =
-        quantidade - duplicatasNecessarias;
-
-      item.xp =
-        Number(item.xp || 0) -
-        xpExigido;
-
-      item.nivel = proximoNivel;
-
-      transacao.set(
-        referenciaInventario,
-        { cartas: lista },
-        { merge: true }
-      );
-
-      return {
-        nivel: proximoNivel,
-        quantidade: item.quantidade,
-        nome: evolucao.nome || carta.nome
-      };
     }
-  );
-}
 
+    if (!registroCarta.exists()) {
+      throw Error("Carta não encontrada no catálogo.");
+    }
+
+    const carta = registroCarta.data();
+
+    const lista = inventarioAtual.exists()
+      ? (inventarioAtual.data().cartas || [])
+          .map(item => ({ ...item }))
+      : [];
+
+    const item = lista.find(
+      cartaInventario =>
+        String(cartaInventario.idCarta) ===
+        String(idCarta)
+    );
+
+    if (!item) {
+      throw Error(
+        "Carta não encontrada no inventário."
+      );
+    }
+
+    const nivel = Number(item.nivel ?? 0);
+
+    if (nivel !== 10 && nivel !== 20) {
+      throw Error(
+        "A evolução exige que a carta esteja no nível 10 ou 20."
+      );
+    }
+
+    const proximoNivel = nivel + 1;
+    const evolucao = etapaEvolucao(
+      carta,
+      proximoNivel
+    );
+
+    if (!evolucao) {
+      throw Error(
+        "O Admin ainda não cadastrou essa evolução."
+      );
+    }
+
+    const padraoDuplicatas =
+      proximoNivel === 11 ? 3 : 5;
+
+    const duplicatasNecessarias = Math.max(
+      0,
+      Math.floor(
+        Number(
+          evolucao.duplicatas ??
+          padraoDuplicatas
+        )
+      )
+    );
+
+    const quantidade = Number(
+      item.quantidade || 0
+    );
+
+    if (
+      quantidade <
+      duplicatasNecessarias + 1
+    ) {
+      throw Error(
+        `Você precisa de ${duplicatasNecessarias} cópias extras. ` +
+        `Possui ${Math.max(0, quantidade - 1)}.`
+      );
+    }
+
+    const xpExigido = xpNecessario(nivel);
+
+    if (
+      Number(item.xp || 0) < xpExigido
+    ) {
+      throw Error(
+        `Faltam ${
+          xpExigido -
+          Number(item.xp || 0)
+        } XP para evoluir.`
+      );
+    }
+
+    item.quantidade =
+      quantidade - duplicatasNecessarias;
+
+    item.xp =
+      Number(item.xp || 0) - xpExigido;
+
+    item.nivel = proximoNivel;
+
+    transacao.set(
+      referenciaInventario,
+      { cartas: lista },
+      { merge: true }
+    );
+
+    return {
+      nivel: proximoNivel,
+      quantidade: item.quantidade,
+      nome: evolucao.nome || carta.nome
+    };
+  });
+}
 
 // ==================================================
 // DISPONIBILIZAR FUNÇÕES PARA O SITE
