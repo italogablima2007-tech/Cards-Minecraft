@@ -972,13 +972,31 @@ async function treinarCarta(reino, idCarta) {
       referenciaInventario
     );
 
-    const registroCarta = await transacao.get(
-      referenciaCarta
-    );
+const referenciaExclusao = doc(
+  db,
+  "exclusoesCartas",
+  id
+);
 
-    if (!registroCarta.exists()) {
-      throw Error("Carta não encontrada no catálogo.");
-    }
+const registroCarta = await transacao.get(
+  referenciaCarta
+);
+
+const registroExclusao = await transacao.get(
+  referenciaExclusao
+);
+
+if (registroExclusao.exists()) {
+  throw Error(
+    `A carta ${id} foi excluída e não pode ser adicionada.`
+  );
+}
+
+if (!registroCarta.exists()) {
+  throw Error(
+    `A carta ${id} não existe mais no catálogo.`
+  );
+}
 
     const carta = registroCarta.data();
 
