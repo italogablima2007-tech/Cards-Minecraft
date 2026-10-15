@@ -439,3 +439,5 @@ def limpar_referencias_firebase(firebase_id):
             resultado["cartas_removidas_pacotes"] += removidas
 
     return resultado
+
+
