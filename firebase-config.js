@@ -263,7 +263,35 @@ async function apagarCarta(id) {
     throw Error("Apenas o Admin pode excluir cartas");
   }
 
-  await deleteDoc(doc(db, "cartas", String(id)));
+  const firebaseId = String(id).trim();
+
+  if (!firebaseId) {
+    throw Error("ID da carta inválido");
+  }
+
+  const token = await auth.currentUser.getIdToken();
+
+  const resposta = await fetch(
+    `https://cards-minecraft.onrender.com/cartas/${encodeURIComponent(firebaseId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    }
+  );
+
+  const dados = await resposta.json().catch(() => ({}));
+
+  if (!resposta.ok) {
+    throw Error(
+      typeof dados.detail === "string"
+        ? dados.detail
+        : `Erro ao excluir carta: HTTP ${resposta.status}`
+    );
+  }
+
+  return dados;
 }
 
 // ==================================================
