@@ -59,6 +59,24 @@ class Carta(Base):
     passivas = Column(JSON, default=list)
     evolucoes = Column(JSON, default=list)
 
+class ExclusaoCarta(Base):
+    __tablename__ = "exclusoes_cartas"
+
+    firebase_id = Column(
+        String(100),
+        primary_key=True
+    )
+
+    status = Column(
+        String(30),
+        nullable=False,
+        default="pendente"
+    )
+
+    iniciado_em = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
 
 # ==================================================
 # INVENTÁRIO DOS JOGADORES
