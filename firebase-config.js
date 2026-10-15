@@ -573,6 +573,27 @@ async function resgatarPacote(id, reino) {
     if (!Array.isArray(dados.cartas)) {
       throw Error("Pacote inválido");
     }
+        // Impede o resgate de pacotes com cartas
+    // que não existem mais no catálogo Firebase.
+
+    for (const idCarta of dados.cartas) {
+      const referenciaCarta = doc(
+        db,
+        "cartas",
+        String(idCarta)
+      );
+
+      const registroCarta = await transacao.get(
+        referenciaCarta
+      );
+
+      if (!registroCarta.exists()) {
+        throw Error(
+          "Este pacote contém uma carta removida do jogo. " +
+          "Solicite ao administrador a atualização do pacote."
+        );
+      }
+    }
 
     const lista = inventarioAtual.exists()
       ? (inventarioAtual.data().cartas || []).map(item => ({ ...item }))
