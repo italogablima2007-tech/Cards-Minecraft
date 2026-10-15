@@ -246,83 +246,83 @@ def excluir_carta(
     db: Session = Depends(get_db),
     admin: dict = Depends(verificar_admin_firebase)
 ):
+    """Exclusão retomável. Não há transação distribuída entre os bancos."""
     firebase_id = firebase_id.strip()
-
     if not firebase_id:
-        raise HTTPException(
-            status_code=400,
-            detail="ID da carta inválido"
-        )
+        raise HTTPException(status_code=400, detail="ID da carta inválido")
 
-    # ==========================================
-    # VERIFICAR SE A CARTA EXISTE
-    # ==========================================
-
-    carta = db.query(Carta).filter(
-        Carta.firebase_id == firebase_id
-    ).first()
-
-    if not carta:
-        raise HTTPException(
-            status_code=404,
-            detail="Carta não encontrada no PostgreSQL"
-        )
-
-    # ==========================================
-    # VERIFICAR EXCLUSÃO EXISTENTE
-    # ==========================================
-
+    carta = db.query(Carta).filter(Carta.firebase_id == firebase_id).first()
     exclusao = db.get(ExclusaoCarta, firebase_id)
 
-    if exclusao:
+    if exclusao and exclusao.status == "concluida":
         return {
             "sucesso": True,
-            "exclusao_concluida": False,
+            "exclusao_concluida": True,
             "firebase_id": firebase_id,
-            "status": exclusao.status,
-            "mensagem": (
-                "Esta carta já possui uma solicitação de exclusão. "
-                "A limpeza definitiva ainda não foi executada."
-            )
+            "status": "concluida",
+            "mensagem": "Exclusão já concluída."
         }
-    # ==========================================
-    # REGISTRAR EXCLUSÃO PENDENTE
-    # ==========================================
 
-    exclusao = ExclusaoCarta(
-        firebase_id=firebase_id,
-        status="pendente"
-    )
+    if carta is None and exclusao is None:
+        raise HTTPException(status_code=404, detail="Carta não encontrada")
 
+    # Registrar intenção no PostgreSQL antes de tocar no Firebase.
+    if exclusao is None:
+        exclusao = ExclusaoCarta(firebase_id=firebase_id, status="pendente")
+        try:
+            db.add(exclusao)
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            exclusao = db.get(ExclusaoCarta, firebase_id)
+            if exclusao is None:
+                raise HTTPException(status_code=409, detail="Conflito ao registrar exclusão")
+        except Exception:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Falha ao registrar exclusão")
+
+    # A marca no Firestore vem antes da limpeza. As operações de
+    # inventário que consultam esta marca em transações são bloqueadas.
     try:
-        db.add(exclusao)
-        db.commit()
-
-    except IntegrityError:
-        db.rollback()
-
-        raise HTTPException(
-            status_code=409,
-            detail="Esta exclusão já foi solicitada"
-        )
-
+        registrar_exclusao_firebase(firebase_id)
+        resumo_firebase = limpar_referencias_firebase(firebase_id)
+        resultado_catalogo = remover_carta_catalogo_firebase(firebase_id)
     except Exception:
         db.rollback()
-
+        # Não remover o marcador PostgreSQL: a chamada pode ser repetida.
         raise HTTPException(
-            status_code=500,
-            detail="Não foi possível registrar a exclusão"
+            status_code=503,
+            detail="Limpeza Firebase incompleta. A exclusão permanece pendente; tente novamente."
+        )
+
+    # As operações SQL devem usar a mesma transação.
+    try:
+        carta = db.query(Carta).filter(Carta.firebase_id == firebase_id).first()
+        salas_canceladas = cancelar_salas_com_carta(db, firebase_id)
+        inventarios_sql = 0
+        if carta is not None:
+            inventarios_sql = limpar_inventarios_postgresql(db, carta.id)
+            db.delete(carta)
+        exclusao = db.get(ExclusaoCarta, firebase_id)
+        exclusao.status = "concluida"
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=503,
+            detail="Limpeza PostgreSQL/PvP incompleta. A exclusão permanece pendente; tente novamente."
         )
 
     return {
         "sucesso": True,
-        "exclusao_concluida": False,
+        "exclusao_concluida": True,
         "firebase_id": firebase_id,
-        "status": "pendente",
-        "mensagem": (
-            "Solicitação registrada. "
-            "A carta ainda não foi excluída."
-        )
+        "status": "concluida",
+        "inventarios_postgresql_removidos": inventarios_sql,
+        "salas_pvp_canceladas": salas_canceladas,
+        "firebase": resumo_firebase,
+        "catalogo_firebase": resultado_catalogo,
+        "mensagem": "Limpeza executada. Verifique também as regras de escrita do Firestore."
     }
 
 
@@ -481,47 +481,24 @@ def limpar_inventarios_postgresql(db: Session, carta_id: int):
 
 def remover_carta_catalogo_firebase(firebase_id):
     banco = firestore.client()
-
-    referencia = banco.collection(
-        "cartas"
-    ).document(str(firebase_id))
-
+    referencia = banco.collection("cartas").document(str(firebase_id))
     documento = referencia.get()
-
     if not documento.exists:
-        return {
-            "removida": False,
-            "mensagem": "A carta já não existe no catálogo Firebase."
-        }
-
+        return {"removida": False, "mensagem": "Carta já ausente do catálogo Firebase."}
     referencia.delete()
+    return {"removida": True, "mensagem": "Carta removida do catálogo Firebase."}
 
-    # ==========================================
+
+# ==========================================
 # REGISTRAR EXCLUSÃO NO FIREBASE
 # ==========================================
 
 def registrar_exclusao_firebase(firebase_id):
     banco = firestore.client()
-
-    referencia = banco.collection(
-        "exclusoesCartas"
-    ).document(str(firebase_id))
-
-    referencia.set(
-        {
-            "firebase_id": str(firebase_id),
-            "excluida": True,
-            "atualizado_em": firestore.SERVER_TIMESTAMP
-        },
-        merge=True
-    )
-
-    return {
-        "sucesso": True,
-        "firebase_id": str(firebase_id)
-    }
-
-    return {
-        "removida": True,
-        "mensagem": "Carta removida do catálogo Firebase."
-    }
+    referencia = banco.collection("exclusoesCartas").document(str(firebase_id))
+    referencia.set({
+        "firebase_id": str(firebase_id),
+        "excluida": True,
+        "atualizado_em": firestore.SERVER_TIMESTAMP
+    }, merge=True)
+    return {"sucesso": True, "firebase_id": str(firebase_id)}
