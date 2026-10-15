@@ -2,8 +2,11 @@ import os
 import json
 
 import firebase_admin
-from firebase_admin import credentials, auth as firebase_auth
-
+from firebase_admin import (
+    credentials,
+    auth as firebase_auth,
+    firestore
+)
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -303,3 +306,136 @@ def excluir_carta(
             "A carta ainda não foi excluída."
         )
     }
+
+
+# ==========================================
+# LIMPEZA DE REFERÊNCIAS NO FIREBASE
+# ==========================================
+
+def limpar_referencias_firebase(firebase_id):
+    banco = firestore.client()
+    firebase_id = str(firebase_id)
+
+    resultado = {
+        "inventarios_atualizados": 0,
+        "cartas_removidas_inventarios": 0,
+        "pacotes_atualizados": 0,
+        "cartas_removidas_pacotes": 0
+    }
+
+    # ======================================
+    # LIMPAR INVENTÁRIOS DOS REINOS
+    # ======================================
+
+    for reino in ["Drakmor", "Solaris", "Aetheryon"]:
+        referencia = banco.collection(
+            "inventarios"
+        ).document(reino)
+
+        @firestore.transactional
+        def limpar_inventario(transacao):
+            documento = referencia.get(
+                transaction=transacao
+            )
+
+            if not documento.exists:
+                return 0
+
+            dados = documento.to_dict() or {}
+            cartas = dados.get("cartas", [])
+
+            if not isinstance(cartas, list):
+                raise ValueError(
+                    f"Inventário inválido: {reino}"
+                )
+
+            restantes = [
+                carta for carta in cartas
+                if str(carta.get("idCarta")) != firebase_id
+            ]
+
+            removidas = len(cartas) - len(restantes)
+
+            if removidas:
+                transacao.update(
+                    referencia,
+                    {"cartas": restantes}
+                )
+
+            return removidas
+
+        removidas = limpar_inventario(
+            banco.transaction()
+        )
+
+        if removidas:
+            resultado["inventarios_atualizados"] += 1
+            resultado["cartas_removidas_inventarios"] += removidas
+
+    # ======================================
+    # LIMPAR PACOTES PENDENTES
+    # ======================================
+
+    pacotes = banco.collection(
+        "pacotesEnviados"
+    ).where(
+        "status", "==", "pendente"
+    ).stream()
+
+    for pacote in pacotes:
+        referencia = pacote.reference
+
+        @firestore.transactional
+        def limpar_pacote(transacao):
+            documento = referencia.get(
+                transaction=transacao
+            )
+
+            if not documento.exists:
+                return 0
+
+            dados = documento.to_dict() or {}
+
+            if dados.get("status") != "pendente":
+                return 0
+
+            cartas = dados.get("cartas", [])
+
+            if not isinstance(cartas, list):
+                raise ValueError(
+                    f"Pacote inválido: {referencia.id}"
+                )
+
+            restantes = [
+                carta for carta in cartas
+                if str(carta) != firebase_id
+            ]
+
+            removidas = len(cartas) - len(restantes)
+
+            if removidas:
+                if restantes:
+                    transacao.update(
+                        referencia,
+                        {"cartas": restantes}
+                    )
+                else:
+                    transacao.update(
+                        referencia,
+                        {
+                            "cartas": [],
+                            "status": "cancelado"
+                        }
+                    )
+
+            return removidas
+
+        removidas = limpar_pacote(
+            banco.transaction()
+        )
+
+        if removidas:
+            resultado["pacotes_atualizados"] += 1
+            resultado["cartas_removidas_pacotes"] += removidas
+
+    return resultado
