@@ -8,6 +8,7 @@ from firebase_admin import (
     firestore
 )
 
+from pvp import cancelar_salas_com_carta
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import exists
 from sqlalchemy.orm import Session
