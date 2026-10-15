@@ -7,10 +7,11 @@ from firebase_admin import (
     auth as firebase_auth,
     firestore
 )
+
 from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy import exists
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-
 from pydantic import BaseModel, Field
 from typing import Any
 
@@ -83,7 +84,18 @@ def verificar_admin_firebase(
 
 @router.get("")
 def listar_cartas(db: Session = Depends(get_db)):
-    cartas = db.query(Carta).order_by(Carta.id).all()
+
+    # Não exibir cartas marcadas para exclusão.
+    cartas = (
+        db.query(Carta)
+        .filter(
+            ~exists().where(
+                ExclusaoCarta.firebase_id == Carta.firebase_id
+            )
+        )
+        .order_by(Carta.id)
+        .all()
+    )
 
     return {
         "total": len(cartas),
@@ -439,5 +451,3 @@ def limpar_referencias_firebase(firebase_id):
             resultado["cartas_removidas_pacotes"] += removidas
 
     return resultado
-
-
