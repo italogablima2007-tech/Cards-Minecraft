@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from typing import Any
 
 from database import get_db
-from models import Carta, ExclusaoCarta
+from models import Carta, ExclusaoCarta, Inventario
 
 
 # ==========================================
@@ -452,3 +452,20 @@ def limpar_referencias_firebase(firebase_id):
             resultado["cartas_removidas_pacotes"] += removidas
 
     return resultado
+
+# ==========================================
+# LIMPEZA DE INVENTÁRIOS POSTGRESQL
+# ==========================================
+
+def limpar_inventarios_postgresql(db: Session, carta_id: int):
+    quantidade = (
+        db.query(Inventario)
+        .filter(Inventario.carta_id == carta_id)
+        .delete(synchronize_session=False)
+    )
+
+    # Não executar commit aqui.
+    # A exclusão será confirmada junto com
+    # as demais operações PostgreSQL.
+
+    return quantidade
