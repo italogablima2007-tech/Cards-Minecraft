@@ -308,13 +308,44 @@ async function inventario(reino) {
     : [];
 }
 
+
 async function adicionarCartas(reino, ids) {
+  if (!reinos.includes(reino)) {
+    throw Error("Reino inválido");
+  }
+
+  if (!Array.isArray(ids) || !ids.length) {
+    throw Error("Nenhuma carta informada");
+  }
+
   await runTransaction(db, async transacao => {
     const referencia = doc(db, "inventarios", reino);
     const resultado = await transacao.get(referencia);
 
+    // Verifica todas as cartas antes de modificar
+    // o inventário.
+    for (const id of new Set(ids.map(String))) {
+      const referenciaCarta = doc(
+        db,
+        "cartas",
+        id
+      );
+
+      const registroCarta = await transacao.get(
+        referenciaCarta
+      );
+
+      if (!registroCarta.exists()) {
+        throw Error(
+          `A carta ${id} não existe mais no catálogo.`
+        );
+      }
+    }
+
     const lista = resultado.exists()
-      ? (resultado.data().cartas || []).map(item => ({ ...item }))
+      ? (resultado.data().cartas || []).map(
+          item => ({ ...item })
+        )
       : [];
 
     for (const id of ids) {
@@ -323,7 +354,8 @@ async function adicionarCartas(reino, ids) {
       );
 
       if (item) {
-        item.quantidade = Number(item.quantidade || 0) + 1;
+        item.quantidade =
+          Number(item.quantidade || 0) + 1;
       } else {
         lista.push({
           idCarta: id,
@@ -334,7 +366,9 @@ async function adicionarCartas(reino, ids) {
       }
     }
 
-    transacao.set(referencia, { cartas: lista });
+    transacao.set(referencia, {
+      cartas: lista
+    });
   });
 }
 
