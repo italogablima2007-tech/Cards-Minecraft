@@ -496,6 +496,31 @@ def remover_carta_catalogo_firebase(firebase_id):
 
     referencia.delete()
 
+    # ==========================================
+# REGISTRAR EXCLUSÃO NO FIREBASE
+# ==========================================
+
+def registrar_exclusao_firebase(firebase_id):
+    banco = firestore.client()
+
+    referencia = banco.collection(
+        "exclusoesCartas"
+    ).document(str(firebase_id))
+
+    referencia.set(
+        {
+            "firebase_id": str(firebase_id),
+            "excluida": True,
+            "atualizado_em": firestore.SERVER_TIMESTAMP
+        },
+        merge=True
+    )
+
+    return {
+        "sucesso": True,
+        "firebase_id": str(firebase_id)
+    }
+
     return {
         "removida": True,
         "mensagem": "Carta removida do catálogo Firebase."
