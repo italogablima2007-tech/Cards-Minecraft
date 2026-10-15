@@ -275,11 +275,16 @@ def excluir_carta(
     exclusao = db.get(ExclusaoCarta, firebase_id)
 
     if exclusao:
-        raise HTTPException(
-            status_code=409,
-            detail="Já existe uma solicitação de exclusão para esta carta"
-        )
-
+        return {
+            "sucesso": True,
+            "exclusao_concluida": False,
+            "firebase_id": firebase_id,
+            "status": exclusao.status,
+            "mensagem": (
+                "Esta carta já possui uma solicitação de exclusão. "
+                "A limpeza definitiva ainda não foi executada."
+            )
+        }
     # ==========================================
     # REGISTRAR EXCLUSÃO PENDENTE
     # ==========================================
