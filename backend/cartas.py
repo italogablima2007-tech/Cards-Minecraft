@@ -474,3 +474,29 @@ def limpar_inventarios_postgresql(db: Session, carta_id: int):
     # as demais operações PostgreSQL.
 
     return quantidade
+
+# ==========================================
+# REMOVER CARTA DO CATÁLOGO FIREBASE
+# ==========================================
+
+def remover_carta_catalogo_firebase(firebase_id):
+    banco = firestore.client()
+
+    referencia = banco.collection(
+        "cartas"
+    ).document(str(firebase_id))
+
+    documento = referencia.get()
+
+    if not documento.exists:
+        return {
+            "removida": False,
+            "mensagem": "A carta já não existe no catálogo Firebase."
+        }
+
+    referencia.delete()
+
+    return {
+        "removida": True,
+        "mensagem": "Carta removida do catálogo Firebase."
+    }
