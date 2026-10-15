@@ -761,6 +761,29 @@ async function abrirPacoteDiario(reino) {
     const diario = await transacao.get(referenciaDiario);
     const inventarioAtual = await transacao.get(referenciaInventario);
 
+    // Verifica se as cartas sorteadas ainda existem.
+    // Todas as leituras devem ocorrer antes das escritas
+    // da transação do Firestore.
+
+    for (const idCarta of new Set(ids)) {
+      const referenciaCarta = doc(
+        db,
+        "cartas",
+        String(idCarta)
+      );
+
+      const registroCarta = await transacao.get(
+        referenciaCarta
+      );
+
+      if (!registroCarta.exists()) {
+        throw Error(
+          "Uma carta sorteada não está mais disponível. " +
+          "Tente abrir o pacote novamente."
+        );
+      }
+    }
+    
     const ultimo = (
       diario.exists() &&
       diario.data().abertoEm?.toMillis
