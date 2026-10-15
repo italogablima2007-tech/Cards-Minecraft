@@ -6,3 +6,4 @@ psycopg[binary]
 psycopg2-binary
 httpx
 itsdangerous
+firebase-admin
