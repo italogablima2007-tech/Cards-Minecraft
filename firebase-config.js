@@ -881,178 +881,49 @@ function validarReinoDaCarta(usuario, reino) {
 // TREINAMENTO
 // ==================================================
 
+
 async function treinarCarta(reino, idCarta) {
-  validarReinoDaCarta(
-    await perfil(),
-    reino
+  validarReinoDaCarta(await perfil(), reino);
+
+  const conta = auth.currentUser;
+  if (!conta) {
+    throw Error("Faça login para treinar esta carta.");
+  }
+
+  const token = await conta.getIdToken();
+  const resposta = await fetch(
+    `https://cards-minecraft.onrender.com/inventario/reino/${encodeURIComponent(reino)}/cartas/${encodeURIComponent(String(idCarta))}/treinar`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    }
   );
 
-  const referenciaInventario = doc(
-    db,
-    "inventarios",
-    reino
-  );
+  const dados = await resposta.json().catch(() => ({}));
 
-  const referenciaCarta = doc(
-    db,
-    "cartas",
-    String(idCarta)
-  );
-
-  const referenciaExclusao = doc(
-    db,
-    "exclusoesCartas",
-    String(idCarta)
-  );
-
-  return runTransaction(db, async transacao => {
-    const inventarioAtual = await transacao.get(
-      referenciaInventario
+  if (!resposta.ok) {
+    throw Error(
+      typeof dados.detail === "string"
+        ? dados.detail
+        : `Erro ao treinar carta: HTTP ${resposta.status}`
     );
+  }
 
-    const registroCarta = await transacao.get(
-      referenciaCarta
+  if (
+    !Number.isInteger(dados.nivel) ||
+    !Number.isFinite(dados.xp) ||
+    dados.recebido !== XP_TREINO
+  ) {
+    throw Error(
+      "O servidor retornou um treinamento inválido. Verifique o inventário antes de tentar novamente."
     );
+  }
 
-    const registroExclusao = await transacao.get(
-      referenciaExclusao
-    );
-
-    if (registroExclusao.exists()) {
-      throw Error(
-        "Esta carta foi excluída e não pode ser treinada."
-      );
-    }
-
-    if (!registroCarta.exists()) {
-      throw Error("Carta não encontrada no catálogo.");
-    }
-
-    const carta = registroCarta.data();
-
-    const lista = inventarioAtual.exists()
-      ? (inventarioAtual.data().cartas || [])
-          .map(item => ({ ...item }))
-      : [];
-
-    const item = lista.find(
-      cartaInventario =>
-        String(cartaInventario.idCarta) ===
-        String(idCarta)
-    );
-
-    if (
-      !item ||
-      Number(item.quantidade || 0) < 1
-    ) {
-      throw Error("Você não possui esta carta.");
-    }
-
-    let nivel = Math.max(
-      0,
-      Math.min(
-        NIVEL_MAXIMO,
-        Number(item.nivel ?? 0)
-      )
-    );
-
-    let xp = Math.max(
-      0,
-      Number(item.xp) || 0
-    );
-
-    if (nivel >= NIVEL_MAXIMO) {
-      throw Error(
-        "Esta carta já está no nível máximo."
-      );
-    }
-
-    const bloqueado = (
-      nivel === 10 &&
-      etapaEvolucao(carta, 11)
-    ) || (
-      nivel === 20 &&
-      etapaEvolucao(carta, 21)
-    );
-
-    if (
-      bloqueado &&
-      xp >= xpNecessario(nivel)
-    ) {
-      throw Error(
-        "XP completo. Evolua esta carta para continuar treinando."
-      );
-    }
-
-    const agora = Date.now();
-    const ultimoTreino = Number(
-      item.ultimoTreino || 0
-    );
-
-    if (
-      ultimoTreino &&
-      agora < ultimoTreino + INTERVALO_TREINO_MS
-    ) {
-      throw Error(
-        "Treino indisponível. Aguarde 4 horas desde o último treino."
-      );
-    }
-
-    xp += XP_TREINO;
-
-    while (
-      nivel < NIVEL_MAXIMO &&
-      xp >= xpNecessario(nivel)
-    ) {
-      const exigeEvolucao = (
-        nivel === 10 &&
-        etapaEvolucao(carta, 11)
-      ) || (
-        nivel === 20 &&
-        etapaEvolucao(carta, 21)
-      );
-
-      if (exigeEvolucao) {
-        xp = xpNecessario(nivel);
-        break;
-      }
-
-      xp -= xpNecessario(nivel);
-      nivel++;
-
-      const chegouNaEvolucao = (
-        nivel === 10 &&
-        etapaEvolucao(carta, 11)
-      ) || (
-        nivel === 20 &&
-        etapaEvolucao(carta, 21)
-      );
-
-      if (chegouNaEvolucao) {
-        xp = Math.min(
-          xp,
-          xpNecessario(nivel)
-        );
-        break;
-      }
-    }
-
-    item.nivel = nivel;
-    item.xp = nivel >= NIVEL_MAXIMO ? 0 : xp;
-    item.ultimoTreino = agora;
-
-    transacao.set(
-      referenciaInventario,
-      { cartas: lista },
-      { merge: true }
-    );
-
-    return {
-      nivel: item.nivel,
-      xp: item.xp,
-      recebido: XP_TREINO
-    };
-  });
+  return {
+    nivel: dados.nivel,
+    xp: dados.xp,
+    recebido: dados.recebido
+  };
 }
 
 // ==================================================
