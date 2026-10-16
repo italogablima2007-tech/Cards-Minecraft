@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from firebase_admin import firestore
 from pydantic import BaseModel, Field
 from collections import Counter
+from datetime import datetime, timedelta, timezone
+import secrets
+import unicodedata
 
 from database import get_db
 from models import Inventario, Carta, ExclusaoCarta
@@ -546,3 +549,137 @@ def resgatar_pacote_backend(
         raise HTTPException(status_code=409, detail="Dados inválidos no inventário.")
     except Exception:
         raise HTTPException(status_code=503, detail="Não foi possível resgatar o pacote.")
+
+# ==========================================
+# PACOTE DIÁRIO — SORTEIO E ENTREGA NO SERVIDOR
+# ==========================================
+
+CHANCES_DIARIAS = {
+    "comum": 60,
+    "rara": 25,
+    "epica": 10,
+    "lendaria": 4,
+    "mitica": 1,
+}
+INTERVALO_DIARIO = timedelta(hours=24)
+
+
+def _normalizar_raridade_diaria(valor):
+    texto = unicodedata.normalize("NFD", str(valor or ""))
+    return "".join(c for c in texto if unicodedata.category(c) != "Mn").lower().strip()
+
+
+@router.post("/pacotes/diario/{reino}/abrir")
+def abrir_pacote_diario_backend(
+    reino: str,
+    usuario: dict = Depends(verificar_usuario_firebase),
+    db: Session = Depends(get_db),
+):
+    if reino not in REINOS_VALIDOS:
+        raise HTTPException(status_code=404, detail="Reino não encontrado.")
+    if usuario["admin"] or usuario["reino"] != reino:
+        raise HTTPException(status_code=403, detail="Somente a conta do próprio reino pode abrir o pacote diário.")
+
+    # O catálogo e a seleção são definidos exclusivamente no servidor.
+    cartas_pg = db.query(Carta.firebase_id, Carta.raridade).filter(
+        Carta.firebase_id.isnot(None)
+    ).all()
+    ids_catalogo = [str(registro[0]) for registro in cartas_pg if registro[0]]
+    marcadas = set()
+    if ids_catalogo:
+        marcadas = {
+            str(registro[0]) for registro in db.query(ExclusaoCarta.firebase_id).filter(
+                ExclusaoCarta.firebase_id.in_(ids_catalogo)
+            ).all()
+        }
+    grupos = {raridade: [] for raridade in CHANCES_DIARIAS}
+    for firebase_id, raridade in cartas_pg:
+        id_carta = str(firebase_id or "").strip()
+        categoria = _normalizar_raridade_diaria(raridade)
+        if id_carta and id_carta not in marcadas and categoria in grupos:
+            grupos[categoria].append(id_carta)
+
+    disponiveis = [(raridade, peso) for raridade, peso in CHANCES_DIARIAS.items() if grupos[raridade]]
+    if not disponiveis:
+        raise HTTPException(status_code=409, detail="Nenhuma carta válida disponível para o pacote diário.")
+
+    try:
+        inicializar_firebase()
+        banco = firestore.client()
+    except Exception:
+        raise HTTPException(status_code=503, detail="Firebase indisponível.")
+
+    diario_ref = banco.collection("pacotesDiarios").document(reino)
+    inventario_ref = banco.collection("inventarios").document(reino)
+
+    @firestore.transactional
+    def executar(transacao):
+        diario_doc = diario_ref.get(transaction=transacao)
+        inventario_doc = inventario_ref.get(transaction=transacao)
+        ultimo = (diario_doc.to_dict() or {}).get("abertoEm") if diario_doc.exists else None
+        agora = datetime.now(timezone.utc)
+        if ultimo is not None:
+            if not isinstance(ultimo, datetime):
+                raise HTTPException(status_code=409, detail="Data do último pacote inválida.")
+            if ultimo.tzinfo is None:
+                ultimo = ultimo.replace(tzinfo=timezone.utc)
+            if agora < ultimo + INTERVALO_DIARIO:
+                raise HTTPException(status_code=409, detail="Pacote indisponível: aguarde 24 horas desde a última abertura.")
+
+        inventario = inventario_doc.to_dict() or {}
+        original = inventario.get("cartas", [])
+        if not isinstance(original, list) or any(not isinstance(item, dict) for item in original):
+            raise HTTPException(status_code=409, detail="Inventário inválido.")
+        lista = [dict(item) for item in original]
+
+        # Conferir TODAS as cartas elegíveis dentro da transação, antes do sorteio.
+        # Não sorteia cartas ausentes ou marcadas para exclusão no Firestore.
+        elegiveis = {raridade: [] for raridade in CHANCES_DIARIAS}
+        for raridade, _ in disponiveis:
+            for id_carta in grupos[raridade]:
+                carta_doc = banco.collection("cartas").document(id_carta).get(transaction=transacao)
+                exclusao_doc = banco.collection("exclusoesCartas").document(id_carta).get(transaction=transacao)
+                if carta_doc.exists and not exclusao_doc.exists:
+                    elegiveis[raridade].append(id_carta)
+
+        pesos = [(raridade, peso) for raridade, peso in CHANCES_DIARIAS.items() if elegiveis[raridade]]
+        if not pesos:
+            raise HTTPException(status_code=409, detail="Não há cartas disponíveis no catálogo Firebase.")
+
+        total_peso = sum(peso for _, peso in pesos)
+        ids = []
+        for _ in range(3):
+            sorteio = secrets.randbelow(total_peso)
+            for raridade, peso in pesos:
+                if sorteio < peso:
+                    ids.append(secrets.choice(elegiveis[raridade]))
+                    break
+                sorteio -= peso
+
+        for id_carta in ids:
+            item = next((c for c in lista if str(c.get("idCarta")) == id_carta), None)
+            if item is not None:
+                try:
+                    atual = int(item.get("quantidade", 0))
+                except (ValueError, TypeError):
+                    raise HTTPException(status_code=409, detail="Quantidade inválida no inventário.")
+                if atual < 0:
+                    raise HTTPException(status_code=409, detail="Quantidade inválida no inventário.")
+                item["quantidade"] = atual + 1
+            else:
+                lista.append({"idCarta": id_carta, "quantidade": 1, "nivel": 0, "xp": 0})
+
+        if len(lista) > 500:
+            raise HTTPException(status_code=409, detail="Inventário excederia 500 tipos de cartas.")
+
+        # Inventário e cooldown são gravados atomicamente.
+        transacao.set(inventario_ref, {"cartas": lista}, merge=True)
+        transacao.set(diario_ref, {"abertoEm": firestore.SERVER_TIMESTAMP})
+        return {"sucesso": True, "reino": reino, "cartas": ids}
+
+    try:
+        return executar(banco.transaction())
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="Não foi possível abrir o pacote diário.")
