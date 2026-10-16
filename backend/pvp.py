@@ -222,3 +222,50 @@ def pronto(codigo: str, x_pvp_token: str = Header(default='')):
             iniciar(sala)
         sala.atualizado_em = datetime.now(timezone.utc)
         return resumo(sala, n)
+
+# =============================================================
+# ETAPA 1 — ESTADO INICIAL DA ARENA ONLINE
+# Cole este bloco NO FINAL de backend/pvp.py.
+# Não apague as rotas existentes.
+# =============================================================
+
+@router.get('/salas/{codigo}/arena')
+def consultar_arena(codigo: str, x_pvp_token: str = Header(default='')):
+    """Entrega o estado inicial compartilhado da arena.
+
+    Os IDs das cartas só são revelados após os dois jogadores
+    confirmarem suas escolhas. Ainda não executa ataques.
+    """
+    with Session.begin() as db:
+        sala, numero = obter(db, codigo, x_pvp_token)
+        atualizar_prazos(sala)
+
+        if sala.status != 'em_andamento':
+            raise HTTPException(
+                status_code=409,
+                detail='A batalha ainda não começou. Aguarde os dois jogadores ficarem prontos.'
+            )
+
+        # O campo inicial tem quatro posições por jogador.
+        # Somente a primeira posição está ocupada na rodada 1.
+        return {
+            'codigo': sala.codigo,
+            'status': sala.status,
+            'voce': numero,
+            'rodada': sala.rodada,
+            'terreno': sala.terreno,
+            'jogadores': [
+                {
+                    'numero': 1,
+                    'nome': sala.jogador1,
+                    'campo': [sala.escolha1, None, None, None],
+                    'time_ids': sala.time1 if numero == 1 else None,
+                },
+                {
+                    'numero': 2,
+                    'nome': sala.jogador2,
+                    'campo': [sala.escolha2, None, None, None],
+                    'time_ids': sala.time2 if numero == 2 else None,
+                },
+            ],
+        }
