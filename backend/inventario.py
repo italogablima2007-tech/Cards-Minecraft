@@ -683,3 +683,122 @@ def abrir_pacote_diario_backend(
         raise
     except Exception:
         raise HTTPException(status_code=503, detail="Não foi possível abrir o pacote diário.")
+
+# ==========================================
+# TREINAMENTO — PROCESSADO NO BACKEND
+# ==========================================
+
+NIVEL_MAXIMO_TREINO = 30
+INTERVALO_TREINO_MILIS = 4 * 60 * 60 * 1000
+XP_POR_TREINO = 100
+
+
+def _xp_necessario_treino(nivel: int) -> int:
+    if nivel >= NIVEL_MAXIMO_TREINO:
+        return 0
+    return 100 + nivel * 25
+
+
+def _possui_evolucao_treino(carta: dict, nivel: int) -> bool:
+    evolucoes = carta.get("evolucoes", [])
+    if not isinstance(evolucoes, list):
+        return False
+    return any(
+        isinstance(evolucao, dict)
+        and str(evolucao.get("nivel")) == str(nivel)
+        for evolucao in evolucoes
+    )
+
+
+@router.post("/reino/{reino}/cartas/{carta_id}/treinar")
+def treinar_carta_backend(
+    reino: str,
+    carta_id: str,
+    usuario: dict = Depends(verificar_usuario_firebase),
+    db: Session = Depends(get_db),
+):
+    if reino not in REINOS_VALIDOS:
+        raise HTTPException(status_code=404, detail="Reino não encontrado.")
+    if usuario["admin"] or usuario["reino"] != reino:
+        raise HTTPException(status_code=403, detail="Somente o próprio reino pode treinar suas cartas.")
+
+    carta_id = carta_id.strip()
+    if not carta_id or len(carta_id) > 100 or "/" in carta_id:
+        raise HTTPException(status_code=400, detail="ID de carta inválido.")
+
+    cadastrada = db.query(Carta.firebase_id).filter(Carta.firebase_id == carta_id).first()
+    if not cadastrada or db.get(ExclusaoCarta, carta_id):
+        raise HTTPException(status_code=409, detail="Carta ausente ou marcada para exclusão.")
+
+    try:
+        inicializar_firebase()
+        banco = firestore.client()
+    except Exception:
+        raise HTTPException(status_code=503, detail="Firebase indisponível.")
+
+    inventario_ref = banco.collection("inventarios").document(reino)
+    carta_ref = banco.collection("cartas").document(carta_id)
+    exclusao_ref = banco.collection("exclusoesCartas").document(carta_id)
+
+    @firestore.transactional
+    def executar(transacao):
+        inventario_doc = inventario_ref.get(transaction=transacao)
+        carta_doc = carta_ref.get(transaction=transacao)
+        exclusao_doc = exclusao_ref.get(transaction=transacao)
+
+        if exclusao_doc.exists or not carta_doc.exists:
+            raise HTTPException(status_code=409, detail="Carta excluída ou indisponível.")
+        carta = carta_doc.to_dict() or {}
+        dados = inventario_doc.to_dict() or {}
+        original = dados.get("cartas", [])
+        if not isinstance(original, list) or any(not isinstance(c, dict) for c in original):
+            raise HTTPException(status_code=409, detail="Inventário inválido.")
+        lista = [dict(c) for c in original]
+        item = next((c for c in lista if str(c.get("idCarta")) == carta_id), None)
+        if item is None:
+            raise HTTPException(status_code=409, detail="Você não possui esta carta.")
+
+        try:
+            quantidade = int(item.get("quantidade", 0))
+            nivel = int(item.get("nivel", 0))
+            xp = int(item.get("xp", 0))
+            ultimo_treino = int(item.get("ultimoTreino", 0) or 0)
+        except (ValueError, TypeError, OverflowError):
+            raise HTTPException(status_code=409, detail="Dados de treinamento inválidos.")
+        if quantidade < 1 or not 0 <= nivel <= NIVEL_MAXIMO_TREINO or xp < 0 or ultimo_treino < 0:
+            raise HTTPException(status_code=409, detail="Dados de treinamento inválidos.")
+        if nivel >= NIVEL_MAXIMO_TREINO:
+            raise HTTPException(status_code=409, detail="Esta carta já está no nível máximo.")
+        if ((nivel == 10 and _possui_evolucao_treino(carta, 11)) or
+                (nivel == 20 and _possui_evolucao_treino(carta, 21))) and xp >= _xp_necessario_treino(nivel):
+            raise HTTPException(status_code=409, detail="XP completo. Evolua esta carta para continuar treinando.")
+
+        agora = int(datetime.now(timezone.utc).timestamp() * 1000)
+        if ultimo_treino and agora < ultimo_treino + INTERVALO_TREINO_MILIS:
+            raise HTTPException(status_code=409, detail="Treino indisponível. Aguarde 4 horas desde o último treino.")
+
+        xp += XP_POR_TREINO
+        while nivel < NIVEL_MAXIMO_TREINO and xp >= _xp_necessario_treino(nivel):
+            if ((nivel == 10 and _possui_evolucao_treino(carta, 11)) or
+                    (nivel == 20 and _possui_evolucao_treino(carta, 21))):
+                xp = _xp_necessario_treino(nivel)
+                break
+            xp -= _xp_necessario_treino(nivel)
+            nivel += 1
+            if ((nivel == 10 and _possui_evolucao_treino(carta, 11)) or
+                    (nivel == 20 and _possui_evolucao_treino(carta, 21))):
+                xp = min(xp, _xp_necessario_treino(nivel))
+                break
+
+        item["nivel"] = nivel
+        item["xp"] = 0 if nivel >= NIVEL_MAXIMO_TREINO else xp
+        item["ultimoTreino"] = agora
+        transacao.set(inventario_ref, {"cartas": lista}, merge=True)
+        return {"nivel": item["nivel"], "xp": item["xp"], "recebido": XP_POR_TREINO}
+
+    try:
+        return executar(banco.transaction())
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="Não foi possível concluir o treinamento.")
