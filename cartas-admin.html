@@ -1375,7 +1375,9 @@ function mostrarCartas() {
 
     const excluir = document.createElement("button");
     excluir.className = "botao-excluir-carta";
-    excluir.textContent = "🗑️ Excluir";
+    excluir.textContent = "🔒 Excluir (temporariamente bloqueado)";
+    excluir.disabled = true;
+    excluir.title = "A exclusão será liberada após os testes de segurança.";
     excluir.addEventListener("click", () => {
       excluirCarta(carta.id);
     });
@@ -1505,51 +1507,145 @@ async function importarAntigas() {
 // PACOTES COM CARTAS ESCOLHIDAS
 // ==================================================
 const itensPacote = [];
+
+const normalizarRaridade = texto => String(texto ?? '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().trim();
+
+function atualizarTotalPacote() {
+  const total = itensPacote.reduce((soma, item) => soma + (Number(item.quantidade) || 0), 0);
+  $('pacote-total').textContent = `Total: ${total} cartas (máximo 30)`;
+  $('pacote-enviar').disabled = total < 1 || total > 30;
+}
+
 function atualizarItensPacote() {
-  const area = $("pacote-itens");
+  const area = $('pacote-itens');
   area.replaceChildren();
+
   itensPacote.forEach((item, indice) => {
     const linha = document.createElement('div');
-    linha.style.cssText = 'display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap';
-    const selecao = document.createElement('select');
-    selecao.style.flex = '3';
+    linha.style.cssText = 'display:grid;grid-template-columns:1fr;gap:10px;padding:14px;margin:12px 0;border:1px solid var(--borda);border-radius:12px';
+
+    const titulo = document.createElement('strong');
+    titulo.textContent = `Carta ${indice + 1}`;
+
+    const rotuloFiltro = document.createElement('label');
+    rotuloFiltro.textContent = 'Filtrar por raridade';
+    const filtro = document.createElement('select');
+    const todas = document.createElement('option');
+    todas.value = '';
+    todas.textContent = 'Todas as raridades';
+    filtro.appendChild(todas);
+
+    const mapaRaridades = new Map();
     for (const carta of cartas) {
-      const opcao = document.createElement('option');
-      opcao.value = String(carta.id);
-      opcao.textContent = `${carta.nome} (${carta.raridade || 'Comum'})`;
-      selecao.appendChild(opcao);
+      const chave = normalizarRaridade(carta.raridade || 'Comum');
+      if (chave && !mapaRaridades.has(chave)) mapaRaridades.set(chave, carta.raridade || 'Comum');
     }
-    selecao.value = String(item.idCarta);
+    for (const [chave, nome] of mapaRaridades) {
+      const opcao = document.createElement('option');
+      opcao.value = chave;
+      opcao.textContent = nome;
+      filtro.appendChild(opcao);
+    }
+
+    const rotuloCarta = document.createElement('label');
+    rotuloCarta.textContent = 'Escolher carta';
+    const selecao = document.createElement('select');
+
+    function preencherCartas() {
+      const disponiveis = cartas.filter(carta =>
+        !filtro.value || normalizarRaridade(carta.raridade || 'Comum') === filtro.value
+      );
+      selecao.replaceChildren();
+      for (const carta of disponiveis) {
+        const opcao = document.createElement('option');
+        opcao.value = String(carta.id);
+        opcao.textContent = `${carta.nome} — ${carta.raridade || 'Comum'} (${carta.reino || 'Neutro'})`;
+        selecao.appendChild(opcao);
+      }
+      if (disponiveis.some(carta => String(carta.id) === String(item.idCarta))) {
+        selecao.value = String(item.idCarta);
+      } else if (disponiveis.length) {
+        item.idCarta = String(disponiveis[0].id);
+        selecao.value = item.idCarta;
+      } else {
+        item.idCarta = '';
+      }
+    }
+
+    const cartaAtual = cartas.find(carta => String(carta.id) === String(item.idCarta));
+    filtro.value = normalizarRaridade(cartaAtual?.raridade || 'Comum');
+    preencherCartas();
+    filtro.addEventListener('change', preencherCartas);
     selecao.addEventListener('change', () => { item.idCarta = selecao.value; });
+
+    const rotuloQuantidade = document.createElement('label');
+    rotuloQuantidade.textContent = 'Quantidade';
     const quantidade = document.createElement('input');
-    quantidade.type = 'number'; quantidade.min = '1'; quantidade.max = '30';
-    quantidade.value = item.quantidade; quantidade.style.width = '75px';
+    quantidade.type = 'number';
+    quantidade.min = '1';
+    quantidade.max = '30';
+    quantidade.step = '1';
+    quantidade.value = item.quantidade;
     quantidade.addEventListener('input', () => {
       item.quantidade = Number(quantidade.value);
       atualizarTotalPacote();
     });
+
     const remover = document.createElement('button');
-    remover.type = 'button'; remover.textContent = '🗑️';
-    remover.addEventListener('click', () => { itensPacote.splice(indice, 1); atualizarItensPacote(); });
-    linha.append(selecao, quantidade, remover);
+    remover.type = 'button';
+    remover.className = 'botao-cancelar';
+    remover.textContent = '🗑️ Remover carta do pacote';
+    remover.addEventListener('click', () => {
+      itensPacote.splice(indice, 1);
+      atualizarItensPacote();
+    });
+
+    linha.append(titulo, rotuloFiltro, filtro, rotuloCarta, selecao, rotuloQuantidade, quantidade, remover);
     area.appendChild(linha);
   });
   atualizarTotalPacote();
 }
-function atualizarTotalPacote() {
-  $('pacote-total').textContent = 'Total: ' + itensPacote.reduce((n, i) => n + (Number(i.quantidade) || 0), 0) + ' cartas (máximo 30)';
-}
-$('pacote-adicionar').addEventListener('click', () => {
-  if (!cartas.length) return alert('Cadastre uma carta primeiro.');
-  itensPacote.push({idCarta: String(cartas[0].id), quantidade: 1});
-  atualizarItensPacote();
+
+$('pacote-adicionar').addEventListener('click', async () => {
+  const botao = $('pacote-adicionar');
+  botao.disabled = true;
+  try {
+    const atualizadas = await window.RB.listarCartas();
+    if (!Array.isArray(atualizadas) || !atualizadas.length) {
+      throw Error('Nenhuma carta encontrada no catálogo.');
+    }
+    cartas = atualizadas;
+    itensPacote.push({ idCarta: String(cartas[0].id), quantidade: 1 });
+    atualizarItensPacote();
+  } catch (erro) {
+    alert('Não foi possível carregar as cartas: ' + erro.message);
+  } finally {
+    botao.disabled = false;
+  }
 });
+
 $('pacote-enviar').addEventListener('click', async () => {
   const botao = $('pacote-enviar');
   const nome = $('pacote-nome').value.trim();
   const reino = $('pacote-reino').value;
-  if (!nome || !itensPacote.length) return alert('Informe o nome e selecione cartas.');
-  if (!confirm(`Enviar ${itensPacote.reduce((n,i)=>n+Number(i.quantidade),0)} cartas para ${reino}?`)) return;
+  const total = itensPacote.reduce((soma, item) => soma + Number(item.quantidade), 0);
+
+  if (!nome || !itensPacote.length) {
+    alert('Informe o nome e selecione as cartas.');
+    return;
+  }
+  if (itensPacote.some(item =>
+    !Number.isInteger(Number(item.quantidade)) ||
+    Number(item.quantidade) < 1 || Number(item.quantidade) > 30 ||
+    !cartas.some(carta => String(carta.id) === String(item.idCarta))
+  ) || total > 30) {
+    alert('Verifique as cartas e quantidades. Máximo de 30.');
+    return;
+  }
+  if (!confirm(`Enviar ${total} cartas para ${reino}?`)) return;
+
   botao.disabled = true;
   $('pacote-resultado').textContent = 'Enviando...';
   try {
@@ -1559,8 +1655,11 @@ $('pacote-enviar').addEventListener('click', async () => {
     atualizarItensPacote();
   } catch (erro) {
     $('pacote-resultado').textContent = '❌ ' + erro.message;
-  } finally { botao.disabled = false; }
+  } finally {
+    atualizarTotalPacote();
+  }
 });
+
 atualizarItensPacote();
 
 // ==================================================
