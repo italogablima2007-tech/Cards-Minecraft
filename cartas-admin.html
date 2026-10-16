@@ -1375,9 +1375,9 @@ function mostrarCartas() {
 
     const excluir = document.createElement("button");
     excluir.className = "botao-excluir-carta";
-    excluir.textContent = "🔒 Excluir (temporariamente bloqueado)";
-    excluir.disabled = true;
-    excluir.title = "A exclusão será liberada após os testes de segurança.";
+    excluir.textContent = "🗑️ Excluir";
+    excluir.disabled = false;
+    excluir.title = "Solicitar exclusão ao servidor (sujeita às verificações de segurança).";
     excluir.addEventListener("click", () => {
       excluirCarta(carta.id);
     });
