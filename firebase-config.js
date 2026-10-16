@@ -731,6 +731,7 @@ async function estadoPacoteDiario(reino) {
 // ABRIR PACOTE DIÁRIO
 // ==================================================
 
+
 async function abrirPacoteDiario(reino) {
   const usuario = await perfil();
 
@@ -744,125 +745,47 @@ async function abrirPacoteDiario(reino) {
     );
   }
 
-  const catalogo = await listarCartas();
-  const ids = sortearCartasDiarias(catalogo, 3);
+  const conta = auth.currentUser;
 
-  const referenciaDiario = doc(
-    db,
-    "pacotesDiarios",
-    reino
+  if (!conta) {
+    throw Error("Faça login para abrir o pacote diário.");
+  }
+
+  const token = await conta.getIdToken();
+
+  const resposta = await fetch(
+    `https://cards-minecraft.onrender.com/inventario/pacotes/diario/${encodeURIComponent(reino)}/abrir`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
   );
 
-  const referenciaInventario = doc(
-    db,
-    "inventarios",
-    reino
-  );
+  const dados = await resposta.json().catch(() => ({}));
 
-  await runTransaction(db, async transacao => {
-    const diario = await transacao.get(referenciaDiario);
-    const inventarioAtual = await transacao.get(
-      referenciaInventario
+  if (!resposta.ok) {
+    const erro = Error(
+      typeof dados.detail === "string"
+        ? dados.detail
+        : `Erro ao abrir pacote diário: HTTP ${resposta.status}`
     );
 
-    for (const idCarta of new Set(ids.map(String))) {
-      const referenciaCarta = doc(
-        db,
-        "cartas",
-        idCarta
-      );
-
-      const referenciaExclusao = doc(
-        db,
-        "exclusoesCartas",
-        idCarta
-      );
-
-      const registroCarta = await transacao.get(
-        referenciaCarta
-      );
-
-      const registroExclusao = await transacao.get(
-        referenciaExclusao
-      );
-
-      if (registroExclusao.exists()) {
-        throw Error(
-          "Uma carta sorteada foi excluída. " +
-          "Tente abrir o pacote novamente."
-        );
-      }
-
-      if (!registroCarta.exists()) {
-        throw Error(
-          "Uma carta sorteada não está mais disponível. " +
-          "Tente abrir o pacote novamente."
-        );
-      }
+    if (dados.proximoEm) {
+      erro.proximoEm = dados.proximoEm;
     }
 
-    const ultimo = (
-      diario.exists() &&
-      diario.data().abertoEm?.toMillis
-    )
-      ? diario.data().abertoEm.toMillis()
-      : 0;
+    throw erro;
+  }
 
-    if (
-      ultimo &&
-      Date.now() < ultimo + INTERVALO_DIARIO_MS
-    ) {
-      const erro = Error(
-        "Pacote indisponível: aguarde a próxima abertura."
-      );
+  if (!Array.isArray(dados.cartas)) {
+    throw Error("O servidor retornou um pacote inválido.");
+  }
 
-      erro.proximoEm = ultimo + INTERVALO_DIARIO_MS;
-      throw erro;
-    }
-
-    const lista = inventarioAtual.exists()
-      ? (inventarioAtual.data().cartas || [])
-          .map(item => ({ ...item }))
-      : [];
-
-    for (const id of ids) {
-      const item = lista.find(
-        carta => String(carta.idCarta) === String(id)
-      );
-
-      if (item) {
-        item.quantidade =
-          Number(item.quantidade || 0) + 1;
-      } else {
-        lista.push({
-          idCarta: id,
-          quantidade: 1,
-          nivel: 0,
-          xp: 0
-        });
-      }
-    }
-
-    if (lista.length > 500) {
-      throw Error(
-        "O inventário atingiu o limite de 500 tipos de cartas."
-      );
-    }
-
-    transacao.set(
-      referenciaInventario,
-      { cartas: lista },
-      { merge: true }
-    );
-
-    transacao.set(
-      referenciaDiario,
-      { abertoEm: serverTimestamp() }
-    );
-  });
-
-  return ids;
+  return dados.cartas;
 }
+
 
 // ==================================================
 // SISTEMA DE XP E EVOLUÇÃO
