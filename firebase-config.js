@@ -931,151 +931,51 @@ async function treinarCarta(reino, idCarta) {
 // ==================================================
 
 async function evoluirCarta(reino, idCarta) {
-  validarReinoDaCarta(
-    await perfil(),
-    reino
+  validarReinoDaCarta(await perfil(), reino);
+
+  const conta = auth.currentUser;
+
+  if (!conta) {
+    throw Error("Faça login para evoluir esta carta.");
+  }
+
+  const token = await conta.getIdToken();
+
+  const resposta = await fetch(
+    `https://cards-minecraft.onrender.com/inventario/reino/${encodeURIComponent(reino)}/cartas/${encodeURIComponent(String(idCarta))}/evoluir`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
   );
 
-  const referenciaInventario = doc(
-    db,
-    "inventarios",
-    reino
-  );
+  const dados = await resposta.json().catch(() => ({}));
 
-  const referenciaCarta = doc(
-    db,
-    "cartas",
-    String(idCarta)
-  );
-
-  const referenciaExclusao = doc(
-    db,
-    "exclusoesCartas",
-    String(idCarta)
-  );
-
-  return runTransaction(db, async transacao => {
-    const inventarioAtual = await transacao.get(
-      referenciaInventario
+  if (!resposta.ok) {
+    throw Error(
+      typeof dados.detail === "string"
+        ? dados.detail
+        : `Erro ao evoluir carta: HTTP ${resposta.status}`
     );
+  }
 
-    const registroCarta = await transacao.get(
-      referenciaCarta
+  if (
+    !Number.isInteger(dados.nivel) ||
+    !Number.isFinite(dados.quantidade) ||
+    typeof dados.nome !== "string"
+  ) {
+    throw Error(
+      "O servidor retornou uma evolução inválida. Confira o inventário antes de tentar novamente."
     );
+  }
 
-    const registroExclusao = await transacao.get(
-      referenciaExclusao
-    );
-
-    if (registroExclusao.exists()) {
-      throw Error(
-        "Esta carta foi excluída e não pode evoluir."
-      );
-    }
-
-    if (!registroCarta.exists()) {
-      throw Error("Carta não encontrada no catálogo.");
-    }
-
-    const carta = registroCarta.data();
-
-    const lista = inventarioAtual.exists()
-      ? (inventarioAtual.data().cartas || [])
-          .map(item => ({ ...item }))
-      : [];
-
-    const item = lista.find(
-      cartaInventario =>
-        String(cartaInventario.idCarta) ===
-        String(idCarta)
-    );
-
-    if (!item) {
-      throw Error(
-        "Carta não encontrada no inventário."
-      );
-    }
-
-    const nivel = Number(item.nivel ?? 0);
-
-    if (nivel !== 10 && nivel !== 20) {
-      throw Error(
-        "A evolução exige que a carta esteja no nível 10 ou 20."
-      );
-    }
-
-    const proximoNivel = nivel + 1;
-    const evolucao = etapaEvolucao(
-      carta,
-      proximoNivel
-    );
-
-    if (!evolucao) {
-      throw Error(
-        "O Admin ainda não cadastrou essa evolução."
-      );
-    }
-
-    const padraoDuplicatas =
-      proximoNivel === 11 ? 3 : 5;
-
-    const duplicatasNecessarias = Math.max(
-      0,
-      Math.floor(
-        Number(
-          evolucao.duplicatas ??
-          padraoDuplicatas
-        )
-      )
-    );
-
-    const quantidade = Number(
-      item.quantidade || 0
-    );
-
-    if (
-      quantidade <
-      duplicatasNecessarias + 1
-    ) {
-      throw Error(
-        `Você precisa de ${duplicatasNecessarias} cópias extras. ` +
-        `Possui ${Math.max(0, quantidade - 1)}.`
-      );
-    }
-
-    const xpExigido = xpNecessario(nivel);
-
-    if (
-      Number(item.xp || 0) < xpExigido
-    ) {
-      throw Error(
-        `Faltam ${
-          xpExigido -
-          Number(item.xp || 0)
-        } XP para evoluir.`
-      );
-    }
-
-    item.quantidade =
-      quantidade - duplicatasNecessarias;
-
-    item.xp =
-      Number(item.xp || 0) - xpExigido;
-
-    item.nivel = proximoNivel;
-
-    transacao.set(
-      referenciaInventario,
-      { cartas: lista },
-      { merge: true }
-    );
-
-    return {
-      nivel: proximoNivel,
-      quantidade: item.quantidade,
-      nome: evolucao.nome || carta.nome
-    };
-  });
+  return {
+    nivel: dados.nivel,
+    quantidade: dados.quantidade,
+    nome: dados.nome
+  };
 }
 
 // ==================================================
