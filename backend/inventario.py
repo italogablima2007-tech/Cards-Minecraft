@@ -802,3 +802,126 @@ def treinar_carta_backend(
         raise
     except Exception:
         raise HTTPException(status_code=503, detail="Não foi possível concluir o treinamento.")
+
+# ==========================================
+# EVOLUÇÃO — PROCESSADA NO BACKEND
+# ==========================================
+
+
+def _etapa_evolucao_backend(carta: dict, nivel: int):
+    evolucoes = carta.get("evolucoes", [])
+    if not isinstance(evolucoes, list):
+        return None
+    return next(
+        (e for e in evolucoes
+         if isinstance(e, dict) and str(e.get("nivel")) == str(nivel)),
+        None,
+    )
+
+
+@router.post("/reino/{reino}/cartas/{carta_id}/evoluir")
+def evoluir_carta_backend(
+    reino: str,
+    carta_id: str,
+    usuario: dict = Depends(verificar_usuario_firebase),
+    db: Session = Depends(get_db),
+):
+    if reino not in REINOS_VALIDOS:
+        raise HTTPException(status_code=404, detail="Reino não encontrado.")
+    if usuario["admin"] or usuario["reino"] != reino:
+        raise HTTPException(status_code=403, detail="Somente o próprio reino pode evoluir suas cartas.")
+
+    carta_id = carta_id.strip()
+    if not carta_id or len(carta_id) > 100 or "/" in carta_id:
+        raise HTTPException(status_code=400, detail="ID de carta inválido.")
+
+    cadastrada = db.query(Carta.firebase_id).filter(Carta.firebase_id == carta_id).first()
+    if not cadastrada or db.get(ExclusaoCarta, carta_id):
+        raise HTTPException(status_code=409, detail="Carta ausente ou marcada para exclusão.")
+
+    try:
+        inicializar_firebase()
+        banco = firestore.client()
+    except Exception:
+        raise HTTPException(status_code=503, detail="Firebase indisponível.")
+
+    inventario_ref = banco.collection("inventarios").document(reino)
+    carta_ref = banco.collection("cartas").document(carta_id)
+    exclusao_ref = banco.collection("exclusoesCartas").document(carta_id)
+
+    @firestore.transactional
+    def executar(transacao):
+        # Todas as leituras devem acontecer antes de qualquer gravação.
+        inventario_doc = inventario_ref.get(transaction=transacao)
+        carta_doc = carta_ref.get(transaction=transacao)
+        exclusao_doc = exclusao_ref.get(transaction=transacao)
+
+        if exclusao_doc.exists or not carta_doc.exists:
+            raise HTTPException(status_code=409, detail="Carta excluída ou indisponível.")
+
+        carta = carta_doc.to_dict() or {}
+        inventario_dados = inventario_doc.to_dict() or {}
+        original = inventario_dados.get("cartas", [])
+        if not isinstance(original, list) or any(not isinstance(c, dict) for c in original):
+            raise HTTPException(status_code=409, detail="Inventário inválido.")
+        lista = [dict(c) for c in original]
+        correspondentes = [c for c in lista if str(c.get("idCarta")) == carta_id]
+        if len(correspondentes) != 1:
+            raise HTTPException(status_code=409, detail="Carta ausente ou duplicada no inventário.")
+        item = correspondentes[0]
+
+        def inteiro_valido(valor, campo):
+            # Não aceitar arredondamentos ou strings decimais que possam burlar requisitos.
+            if isinstance(valor, bool):
+                raise HTTPException(status_code=409, detail=f"{campo} inválido.")
+            try:
+                numero = int(valor)
+            except (TypeError, ValueError, OverflowError):
+                raise HTTPException(status_code=409, detail=f"{campo} inválido.")
+            if str(valor).strip() != str(numero):
+                raise HTTPException(status_code=409, detail=f"{campo} inválido.")
+            return numero
+
+        nivel = inteiro_valido(item.get("nivel", 0), "Nível")
+        xp = inteiro_valido(item.get("xp", 0), "XP")
+        quantidade = inteiro_valido(item.get("quantidade", 0), "Quantidade")
+        if nivel not in (10, 20):
+            raise HTTPException(status_code=409, detail="A evolução exige nível 10 ou 20.")
+        if xp < 0 or quantidade < 1:
+            raise HTTPException(status_code=409, detail="XP ou quantidade inválidos.")
+
+        proximo_nivel = nivel + 1
+        evolucao = _etapa_evolucao_backend(carta, proximo_nivel)
+        if evolucao is None:
+            raise HTTPException(status_code=409, detail="O Admin ainda não cadastrou essa evolução.")
+
+        padrao = 3 if proximo_nivel == 11 else 5
+        duplicatas = inteiro_valido(evolucao.get("duplicatas", padrao), "Duplicatas")
+        if duplicatas < 0 or duplicatas > 500:
+            raise HTTPException(status_code=409, detail="Requisito de duplicatas inválido.")
+        if quantidade < duplicatas + 1:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Você precisa de {duplicatas} cópias extras. Possui {quantidade - 1}.",
+            )
+
+        xp_exigido = _xp_necessario_treino(nivel)
+        if xp < xp_exigido:
+            raise HTTPException(status_code=409, detail=f"Faltam {xp_exigido - xp} XP para evoluir.")
+
+        item["quantidade"] = quantidade - duplicatas
+        item["xp"] = xp - xp_exigido
+        item["nivel"] = proximo_nivel
+        transacao.set(inventario_ref, {"cartas": lista}, merge=True)
+        return {
+            "nivel": proximo_nivel,
+            "quantidade": item["quantidade"],
+            "nome": evolucao.get("nome") or carta.get("nome") or "Carta",
+        }
+
+    try:
+        return executar(banco.transaction())
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="Não foi possível concluir a evolução.")
